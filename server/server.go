@@ -50,7 +50,9 @@ func main() {
 			handlers.handleChangeProfile(w, r)
 			return
 		}
+
 		handlers.handleGetProfile(w, r)
+
 	})
 
 	http.HandleFunc("/logout/", func(w http.ResponseWriter, r *http.Request) {
@@ -59,6 +61,14 @@ func main() {
 		log.Println(r.URL.Path)
 
 		handlers.handleLogout(w, r)
+	})
+
+	http.HandleFunc("/checkUsers/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application-json")
+
+		log.Println(r.URL.Path)
+
+		handlers.checkUsersForTesting(w, r)
 	})
 
 	http.ListenAndServe(":8080", nil)

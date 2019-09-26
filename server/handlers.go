@@ -4,8 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/gorilla/securecookie"
+	"io"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"sort"
 	"sync"
 	"time"
@@ -19,12 +22,14 @@ var cookieHandler = securecookie.New(
 type CredentialsInput struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
+	Image    string `json:"image"`
 }
 
 type Credentials struct {
 	ID       uint64 `json:"id"`
 	Username string `json:"username"`
 	Password string `json:"-"`
+	Image    string `json:"image"`
 }
 
 type Handlers struct {
@@ -48,6 +53,7 @@ func (h *Handlers) handleSignUp(w http.ResponseWriter, r *http.Request) {
 	h.mu.Lock()
 
 	var idUser uint64 = 0
+	var defaultImage = "images/avatar.png"
 
 	if len(h.users) > 0 {
 		idUser = h.users[len(h.users)-1].ID + 1
@@ -57,6 +63,7 @@ func (h *Handlers) handleSignUp(w http.ResponseWriter, r *http.Request) {
 		ID:       idUser,
 		Username: newUserInput.Username,
 		Password: newUserInput.Password,
+		Image:    defaultImage,
 	})
 	h.mu.Unlock()
 }
@@ -119,21 +126,49 @@ func (h *Handlers) handleChangeProfile(w http.ResponseWriter, r *http.Request) {
 
 	h.changeProfile(accounts, changeProfileCredentials)
 
-	ClearCookie(w)
-	SetCookie(w, changeProfileCredentials.Username)
+	if changeProfileCredentials.Username != "" {
+		loadAvatar(w, r, changeProfileCredentials.Username)
+		changeProfileCredentials.Image = "images/" + changeProfileCredentials.Username + ".jpg"
+		ClearCookie(w)
+		SetCookie(w, changeProfileCredentials.Username)
+	} else {
+		loadAvatar(w, r, h.ReadCookieUsername(w, r))
+		changeProfileCredentials.Image = "images/" + changeProfileCredentials.Username + ".jpg"
+	}
 
 	h.mu.Unlock()
 
+}
+
+func loadAvatar(w http.ResponseWriter, r *http.Request, username string) {
+	src, hdr, err := r.FormFile("image")
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	defer src.Close()
+
+	dst, err := os.Create(filepath.Join("/home/toringol/2019_2_TODO/server/images/", hdr.Filename))
+	os.Rename(filepath.Join("/home/toringol/2019_2_TODO/server/images/", hdr.Filename),
+		filepath.Join("/home/toringol/2019_2_TODO/server/images/", username+".jpg"))
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	defer dst.Close()
+
+	io.Copy(dst, src)
 }
 
 func (h *Handlers) handleGetProfile(w http.ResponseWriter, r *http.Request) {
 	encoder := json.NewEncoder(w)
 
 	h.mu.Lock()
-	err := encoder.Encode(ReadCookie(w, r))
+	err := encoder.Encode(h.ReadCookieUsername(w, r))
+	err1 := encoder.Encode(h.ReadCookieAvatar(w, r))
 	h.mu.Unlock()
 
-	if err != nil {
+	if err != nil || err1 != nil {
 		log.Printf("Error while encoding json: %s", err)
 		w.Write([]byte("{}"))
 	}
@@ -142,6 +177,19 @@ func (h *Handlers) handleGetProfile(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) handleLogout(w http.ResponseWriter, r *http.Request) {
 	ClearCookie(w)
 	http.Redirect(w, r, "/", 302)
+}
+
+func (h *Handlers) checkUsersForTesting(w http.ResponseWriter, r *http.Request) {
+	encoder := json.NewEncoder(w)
+	h.mu.Lock()
+	err := encoder.Encode(h.users)
+	h.mu.Unlock()
+	if err != nil {
+		log.Printf("error while marshalling JSON: %s", err)
+		w.Write([]byte("{}"))
+		return
+	}
+	log.Println(h.users)
 }
 
 func (h *Handlers) checkUsername(accounts []Credentials, authCredentials *CredentialsInput) error {
@@ -215,11 +263,29 @@ func ClearCookie(w http.ResponseWriter) {
 	http.SetCookie(w, cookie)
 }
 
-func ReadCookie(w http.ResponseWriter, r *http.Request) string {
+func (h *Handlers) ReadCookieUsername(w http.ResponseWriter, r *http.Request) string {
 	if cookie, err := r.Cookie("session_token"); err == nil {
 		value := make(map[string]string)
 		if err = cookieHandler.Decode("session_token", cookie.Value, &value); err == nil {
 			return value["username"]
+		}
+	}
+	return ""
+}
+
+func (h *Handlers) ReadCookieAvatar(w http.ResponseWriter, r *http.Request) string {
+	if cookie, err := r.Cookie("session_token"); err == nil {
+		value := make(map[string]string)
+		if err = cookieHandler.Decode("session_token", cookie.Value, &value); err == nil {
+			accounts := h.users
+			sort.Slice(accounts[:], func(i, j int) bool {
+				return accounts[i].Username < accounts[j].Username
+			})
+
+			iter := sort.Search(len(accounts), func(i int) bool {
+				return accounts[i].Username == value["username"]
+			})
+			return accounts[iter].Image
 		}
 	}
 	return ""
