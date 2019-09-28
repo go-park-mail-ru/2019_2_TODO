@@ -14,7 +14,9 @@ func main() {
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application-json")
-		SetCookie(w, "Nickname")
+
+		log.Println(r.URL.Path)
+
 		w.Write([]byte("{}"))
 	})
 
@@ -27,6 +29,7 @@ func main() {
 			handlers.handleSignUp(w, r)
 			return
 		}
+
 	})
 
 	http.HandleFunc("/signin/", func(w http.ResponseWriter, r *http.Request) {
@@ -36,7 +39,6 @@ func main() {
 
 		if r.Method == http.MethodPost {
 			handlers.handleSignIn(w, r)
-			SetCookie(w, "Hello")
 			return
 		}
 	})
