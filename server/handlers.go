@@ -78,7 +78,7 @@ func (h *Handlers) handleSignUp(w http.ResponseWriter, r *http.Request) {
 
 	SetCookie(w, newUserInput.Username)
 
-	http.Redirect(w, r, "http://localhost:8080", http.StatusSeeOther)
+	http.Redirect(w, r, "http://93.171.139.196:780/", http.StatusSeeOther)
 }
 
 func (h *Handlers) handleSignIn(w http.ResponseWriter, r *http.Request) {
@@ -127,7 +127,7 @@ func (h *Handlers) handleSignIn(w http.ResponseWriter, r *http.Request) {
 
 	h.mu.Unlock()
 
-	http.Redirect(w, r, "http://localhost:8080", http.StatusSeeOther)
+	http.Redirect(w, r, "http://93.171.139.196:780/", http.StatusSeeOther)
 
 }
 
@@ -144,7 +144,7 @@ func (h *Handlers) handleChangeProfile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if h.ReadCookieUsername(w, r) == "" {
-		http.Redirect(w, r, "http://localhost:8080/signin/", http.StatusSeeOther)
+		http.Redirect(w, r, "http://93.171.139.196:780/signin/", http.StatusSeeOther)
 		return
 	}
 
