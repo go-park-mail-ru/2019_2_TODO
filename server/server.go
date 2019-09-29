@@ -30,6 +30,7 @@ func main() {
 			handlers.handleSignUp(w, r)
 			return
 		}
+
 	})
 
 	http.HandleFunc("/signin/", func(w http.ResponseWriter, r *http.Request) {
