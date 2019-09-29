@@ -40,7 +40,7 @@ type Handlers struct {
 func (h *Handlers) handleSignUp(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Origin", "http://93.171.139.195:780")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
@@ -76,15 +76,15 @@ func (h *Handlers) handleSignUp(w http.ResponseWriter, r *http.Request) {
 	})
 	h.mu.Unlock()
 
-	SetCookie(w, newUserInput.Username)
+	log.Println(newUserInput.Username)
 
-	http.Redirect(w, r, "http://93.171.139.196:780/", http.StatusSeeOther)
+	// http.Redirect(w, r, "http://93.171.139.195:780", http.StatusSeeOther)
 }
 
 func (h *Handlers) handleSignIn(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Origin", "http://93.171.139.195:780")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
@@ -127,24 +127,19 @@ func (h *Handlers) handleSignIn(w http.ResponseWriter, r *http.Request) {
 
 	h.mu.Unlock()
 
-	http.Redirect(w, r, "http://93.171.139.196:780/", http.StatusSeeOther)
+	// http.Redirect(w, r, "http://93.171.139.195:780", http.StatusSeeOther)
 
 }
 
 func (h *Handlers) handleChangeProfile(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Origin", "http://93.171.139.195:780")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
 
 	if r.Method == "OPTIONS" {
-		return
-	}
-
-	if h.ReadCookieUsername(w, r) == "" {
-		http.Redirect(w, r, "http://93.171.139.196:780/signin/", http.StatusSeeOther)
 		return
 	}
 
@@ -160,22 +155,40 @@ func (h *Handlers) handleChangeProfile(w http.ResponseWriter, r *http.Request) {
 
 	h.mu.Lock()
 
-	accounts := h.users
+	oldUsername := h.ReadCookieUsername(w, r)
 
-	h.changeProfile(accounts, changeProfileCredentials)
+	h.changeProfile(h.users, changeProfileCredentials, oldUsername)
 
-	if changeProfileCredentials.Username != "" {
-		loadAvatar(w, r, changeProfileCredentials.Username)
-		changeProfileCredentials.Image = "images/" + changeProfileCredentials.Username + ".jpg"
-		ClearCookie(w)
-		SetCookie(w, changeProfileCredentials.Username)
-	} else {
-		loadAvatar(w, r, h.ReadCookieUsername(w, r))
-		changeProfileCredentials.Image = "images/" + changeProfileCredentials.Username + ".jpg"
-	}
+	ClearCookie(w)
+	SetCookie(w, changeProfileCredentials.Username)
 
 	h.mu.Unlock()
 
+}
+
+func (h *Handlers) handleChangeImage(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	w.Header().Set("Access-Control-Allow-Origin", "http://93.171.139.195:780")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
+
+	if r.Method == "OPTIONS" {
+		return
+	}
+
+	username := h.ReadCookieUsername(w, r)
+
+	loadAvatar(w, r, username)
+
+	changeData := new(CredentialsInput)
+
+	changeData.Image = "images/" + username + ".jpg"
+
+	oldUsername := h.ReadCookieUsername(w, r)
+
+	h.changeProfile(h.users, changeData, oldUsername)
 }
 
 func loadAvatar(w http.ResponseWriter, r *http.Request, username string) {
@@ -186,9 +199,9 @@ func loadAvatar(w http.ResponseWriter, r *http.Request, username string) {
 	}
 	defer src.Close()
 
-	dst, err := os.Create(filepath.Join("/home/toringol/2019_2_TODO/server/images/", hdr.Filename))
-	os.Rename(filepath.Join("/home/toringol/2019_2_TODO/server/images/", hdr.Filename),
-		filepath.Join("/home/toringol/2019_2_TODO/server/images/", username+".jpg"))
+	dst, err := os.Create(filepath.Join("/root/golang/2019_2_TODO/server/images/", hdr.Filename))
+	os.Rename(filepath.Join("/root/golang/2019_2_TODO/server/images/", hdr.Filename),
+		filepath.Join("/root/golang/2019_2_TODO/server/images/", username+".jpg"))
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
@@ -200,18 +213,24 @@ func loadAvatar(w http.ResponseWriter, r *http.Request, username string) {
 
 func (h *Handlers) handleGetProfile(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Origin", "http://93.171.139.195:780")
 	w.Header().Set("Access-Control-Allow-Methods", "GET")
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
 
 	encoder := json.NewEncoder(w)
 
 	h.mu.Lock()
-	err := encoder.Encode(h.ReadCookieUsername(w, r))
-	err1 := encoder.Encode(h.ReadCookieAvatar(w, r))
+
+	cookiesData := CredentialsInput{
+		Username: h.ReadCookieUsername(w, r),
+		Image:    h.ReadCookieAvatar(w, r),
+	}
+
+	err := encoder.Encode(cookiesData)
+
 	h.mu.Unlock()
 
-	if err != nil || err1 != nil {
+	if err != nil {
 		log.Printf("Error while encoding json: %s", err)
 		w.Write([]byte("{}"))
 	}
@@ -223,9 +242,13 @@ func (h *Handlers) handleLogout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) checkUsersForTesting(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Origin", "http://93.171.139.195:780")
 	w.Header().Set("Access-Control-Allow-Methods", "GET")
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
+
+	if h.ReadCookieUsername(w, r) != "" {
+		log.Println("Success checking cook")
+	}
 
 	encoder := json.NewEncoder(w)
 	h.mu.Lock()
@@ -240,6 +263,10 @@ func (h *Handlers) checkUsersForTesting(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *Handlers) checkUsername(accounts []Credentials, authCredentials *CredentialsInput) error {
+	if len(accounts) == 0 {
+		return errors.New("No users")
+	}
+
 	sort.Slice(accounts[:], func(i, j int) bool {
 		return accounts[i].Username < accounts[j].Username
 	})
@@ -248,13 +275,19 @@ func (h *Handlers) checkUsername(accounts []Credentials, authCredentials *Creden
 		return accounts[i].Username == authCredentials.Username
 	})
 
-	if iter >= len(accounts) || accounts[iter].Username != authCredentials.Username {
+	if iter < len(accounts) && accounts[iter].Username == authCredentials.Username {
+		return nil
+	} else {
 		return errors.New("No such user")
 	}
-	return nil
 }
 
 func (h *Handlers) checkPassword(accounts []Credentials, authCredentials *CredentialsInput) error {
+
+	if len(accounts) == 0 {
+		return errors.New("No users")
+	}
+
 	sort.Slice(accounts[:], func(i, j int) bool {
 		return accounts[i].Password < accounts[j].Password
 	})
@@ -263,13 +296,14 @@ func (h *Handlers) checkPassword(accounts []Credentials, authCredentials *Creden
 		return accounts[i].Password == authCredentials.Password
 	})
 
-	if iter >= len(accounts) || accounts[iter].Password != authCredentials.Password {
+	if iter < len(accounts) && accounts[iter].Password == authCredentials.Password {
+		return nil
+	} else {
 		return errors.New("Wrong password")
 	}
-	return nil
 }
 
-func (h *Handlers) changeProfile(accounts []Credentials, changeProfileCredentials *CredentialsInput) {
+func (h *Handlers) changeProfile(accounts []Credentials, changeProfileCredentials *CredentialsInput, oldUsername string) {
 	sort.Slice(accounts[:], func(i, j int) bool {
 		return accounts[i].Username < accounts[j].Username
 	})
@@ -278,8 +312,15 @@ func (h *Handlers) changeProfile(accounts []Credentials, changeProfileCredential
 		return accounts[i].Username == changeProfileCredentials.Username
 	})
 
-	accounts[iter].Username = changeProfileCredentials.Username
-	accounts[iter].Password = changeProfileCredentials.Password
+	if changeProfileCredentials.Username != "" {
+		accounts[iter].Username = changeProfileCredentials.Username
+	}
+	if changeProfileCredentials.Password != "" {
+		accounts[iter].Password = changeProfileCredentials.Password
+	}
+	if changeProfileCredentials.Image != "" {
+		accounts[iter].Image = changeProfileCredentials.Image
+	}
 }
 
 func SetCookie(w http.ResponseWriter, userName string) {
@@ -301,13 +342,13 @@ func SetCookie(w http.ResponseWriter, userName string) {
 }
 
 func ClearCookie(w http.ResponseWriter) {
-	cookie := &http.Cookie{
+	cookie := http.Cookie{
 		Name:    "session_token",
 		Value:   "",
 		Path:    "/",
 		Expires: time.Unix(0, 0),
 	}
-	http.SetCookie(w, cookie)
+	http.SetCookie(w, &cookie)
 }
 
 func (h *Handlers) ReadCookieUsername(w http.ResponseWriter, r *http.Request) string {
