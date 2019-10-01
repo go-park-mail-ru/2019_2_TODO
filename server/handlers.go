@@ -130,6 +130,30 @@ func (h *Handlers) handleSignIn(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func (h *Handlers) handleSignInGet(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", clientIp)
+	w.Header().Set("Access-Control-Allow-Methods", "GET")
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
+
+	cookieUsername := h.ReadCookieUsername(w, r)
+
+	log.Println(cookieUsername)
+
+	if cookieUsername != "" {
+		cookieUsernameInput := CredentialsInput{
+			Username: cookieUsername,
+		}
+
+		encoder := json.NewEncoder(w)
+		err := encoder.Encode(cookieUsernameInput)
+		if err != nil {
+			log.Println("Error while encoding")
+			w.Write([]byte("{}"))
+			return
+		}
+	}
+}
+
 func (h *Handlers) handleChangeProfile(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 

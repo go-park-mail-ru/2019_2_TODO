@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 	"sync"
@@ -43,27 +42,7 @@ func main() {
 			return
 		}
 
-		w.Header().Set("Access-Control-Allow-Origin", clientIp)
-		w.Header().Set("Access-Control-Allow-Methods", "GET")
-		w.Header().Set("Access-Control-Allow-Credentials", "true")
-
-		cookieUsername := handlers.ReadCookieUsername(w, r)
-
-		log.Println(cookieUsername)
-
-		if cookieUsername != "" {
-			cookieUsernameInput := CredentialsInput{
-				Username: cookieUsername,
-			}
-
-			encoder := json.NewEncoder(w)
-			err := encoder.Encode(cookieUsernameInput)
-			if err != nil {
-				log.Println("Error while encoding")
-				w.Write([]byte("{}"))
-				return
-			}
-		}
+		handlers.handleSignInGet(w, r)
 	})
 
 	http.HandleFunc("/profile/", func(w http.ResponseWriter, r *http.Request) {
