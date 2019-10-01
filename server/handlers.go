@@ -14,6 +14,8 @@ import (
 	"time"
 )
 
+const clientIp = "http://93.171.139.195:780"
+
 var cookieHandler = securecookie.New(
 	securecookie.GenerateRandomKey(64),
 	securecookie.GenerateRandomKey(32),
@@ -40,7 +42,7 @@ type Handlers struct {
 func (h *Handlers) handleSignUp(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	w.Header().Set("Access-Control-Allow-Origin", "http://93.171.139.195:780")
+	w.Header().Set("Access-Control-Allow-Origin", clientIp)
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
@@ -78,13 +80,12 @@ func (h *Handlers) handleSignUp(w http.ResponseWriter, r *http.Request) {
 
 	log.Println(newUserInput.Username)
 
-	// http.Redirect(w, r, "http://93.171.139.195:780", http.StatusSeeOther)
 }
 
 func (h *Handlers) handleSignIn(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	w.Header().Set("Access-Control-Allow-Origin", "http://93.171.139.195:780")
+	w.Header().Set("Access-Control-Allow-Origin", clientIp)
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
@@ -127,14 +128,12 @@ func (h *Handlers) handleSignIn(w http.ResponseWriter, r *http.Request) {
 
 	h.mu.Unlock()
 
-	// http.Redirect(w, r, "http://93.171.139.195:780", http.StatusSeeOther)
-
 }
 
 func (h *Handlers) handleChangeProfile(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	w.Header().Set("Access-Control-Allow-Origin", "http://93.171.139.195:780")
+	w.Header().Set("Access-Control-Allow-Origin", clientIp)
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
@@ -169,7 +168,7 @@ func (h *Handlers) handleChangeProfile(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) handleChangeImage(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	w.Header().Set("Access-Control-Allow-Origin", "http://93.171.139.195:780")
+	w.Header().Set("Access-Control-Allow-Origin", clientIp)
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
@@ -213,7 +212,7 @@ func loadAvatar(w http.ResponseWriter, r *http.Request, username string) {
 
 func (h *Handlers) handleGetProfile(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set("Access-Control-Allow-Origin", "http://93.171.139.195:780")
+	w.Header().Set("Access-Control-Allow-Origin", clientIp)
 	w.Header().Set("Access-Control-Allow-Methods", "GET")
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
 
@@ -242,7 +241,7 @@ func (h *Handlers) handleLogout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) checkUsersForTesting(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "http://93.171.139.195:780")
+	w.Header().Set("Access-Control-Allow-Origin", clientIp)
 	w.Header().Set("Access-Control-Allow-Methods", "GET")
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
 
