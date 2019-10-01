@@ -17,12 +17,12 @@ func TestSignUp(t *testing.T) {
 		mu:    &sync.Mutex{},
 	}
 
-	body := bytes.NewReader([]byte(`{"username": "Vasily", "password": "qwerty"}`))
+	body := bytes.NewReader([]byte(`{"username": "Sergey", "password": "qwerty"}`))
 
 	var expectedUsers = []Credentials{
 		{
 			ID:       0,
-			Username: "Vasily",
+			Username: "Sergey",
 			Password: "qwerty",
 		},
 	}
@@ -48,14 +48,14 @@ func TestSignIn(t *testing.T) {
 		mu:    &sync.Mutex{},
 	}
 
-	body := bytes.NewReader([]byte(`{"username": "Vasily", "password": "qwerty"}`))
+	body := bytes.NewReader([]byte(`{"username": "Sergey", "password": "qwerty"}`))
 
 	r := httptest.NewRequest("POST", "/signup/", body)
 	w := httptest.NewRecorder()
 
 	h.handleSignUp(w, r)
 
-	body1 := bytes.NewReader([]byte(`{"username": "Vasily", "password": "qwerty"}`))
+	body1 := bytes.NewReader([]byte(`{"username": "Sergey", "password": "qwerty"}`))
 
 	r = httptest.NewRequest("POST", "/signin/", body1)
 	w = httptest.NewRecorder()
@@ -65,6 +65,39 @@ func TestSignIn(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Error("Failed http Status")
 	}
+}
+
+func TestSignInGet(t *testing.T) {
+	t.Parallel()
+
+	var expectedResponse = `{"username": "Sergey"}`
+
+	h := Handlers{
+		users: []Credentials{},
+		mu:    &sync.Mutex{},
+	}
+
+	body := bytes.NewReader([]byte(`{"username": "Sergey", "password": "qwerty"}`))
+
+	r := httptest.NewRequest("POST", "/signup/", body)
+	w := httptest.NewRecorder()
+
+	h.handleSignUp(w, r)
+
+	body1 := bytes.NewReader([]byte(`{}`))
+
+	r = httptest.NewRequest("GET", "/signin/", body1)
+	w = httptest.NewRecorder()
+
+	SetCookie(w, "Sergey")
+
+	h.handleSignInGet(w, r)
+
+	if w.Code != http.StatusOK {
+		t.Error("Failed http Status")
+	}
+
+	reflect.DeepEqual(w.Body, expectedResponse)
 }
 
 func TestChangeProfile(t *testing.T) {
@@ -78,19 +111,19 @@ func TestChangeProfile(t *testing.T) {
 	var expectedUsers = []Credentials{
 		{
 			ID:       0,
-			Username: "Vasily",
+			Username: "Sergey",
 			Password: "sdhsdh",
 		},
 	}
 
-	body := bytes.NewReader([]byte(`{"username": "Vasily", "password": "qwerty"}`))
+	body := bytes.NewReader([]byte(`{"username": "Sergey", "password": "qwerty"}`))
 
 	r := httptest.NewRequest("POST", "/signup/", body)
 	w := httptest.NewRecorder()
 
 	h.handleSignUp(w, r)
 
-	changeBody := bytes.NewReader([]byte(`{"username": "Vasily", "password": "sdhsdh"}`))
+	changeBody := bytes.NewReader([]byte(`{"username": "Sergey", "password": "sdhsdh"}`))
 
 	r = httptest.NewRequest("POST", "/profile/", changeBody)
 	w = httptest.NewRecorder()
@@ -135,7 +168,7 @@ func TestReadCookieAvatar(t *testing.T) {
 		users: []Credentials{
 			{
 				ID:       0,
-				Username: "Vasily",
+				Username: "Sergey",
 				Password: "sdhsdh",
 				Image:    "images/avatar.png",
 			},
@@ -148,7 +181,7 @@ func TestReadCookieAvatar(t *testing.T) {
 	r := httptest.NewRequest("POST", "/", body)
 	w := httptest.NewRecorder()
 
-	SetCookie(w, "Vasily")
+	SetCookie(w, "Sergey")
 
 	username := h.ReadCookieAvatar(w, r)
 
@@ -182,13 +215,13 @@ func TestClearCookie(t *testing.T) {
 func TestGetProfile(t *testing.T) {
 	t.Parallel()
 
-	var expectedRequestJSON = `{"username": "Vasily", "image": "images/avatar.png"}`
+	var expectedRequestJSON = `{"username": "Sergey", "image": "images/avatar.png"}`
 
 	h := Handlers{
 		users: []Credentials{
 			{
 				ID:       0,
-				Username: "Vasily",
+				Username: "Sergey",
 				Password: "sdhsdh",
 				Image:    "images/avatar.png",
 			},
@@ -201,7 +234,7 @@ func TestGetProfile(t *testing.T) {
 	r := httptest.NewRequest("GET", "/profile/", body)
 	w := httptest.NewRecorder()
 
-	SetCookie(w, "Vasily")
+	SetCookie(w, "Sergey")
 	h.handleGetProfile(w, r)
 
 	reflect.DeepEqual(w.Body, expectedRequestJSON)
