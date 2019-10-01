@@ -43,7 +43,7 @@ func main() {
 			return
 		}
 
-		w.Header().Set("Access-Control-Allow-Origin", "http://93.171.139.195:780")
+		w.Header().Set("Access-Control-Allow-Origin", clientIp)
 		w.Header().Set("Access-Control-Allow-Methods", "GET")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 
