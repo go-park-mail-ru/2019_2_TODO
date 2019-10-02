@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/gorilla/securecookie"
+	"image/jpeg"
 	"io"
 	"log"
 	"net/http"
@@ -15,6 +16,7 @@ import (
 )
 
 const clientIp = "http://93.171.139.195:780"
+const pathToImages = `/root/golang/test/2019_2_TODO/server/`
 
 var cookieHandler = securecookie.New(
 	securecookie.GenerateRandomKey(64),
@@ -64,7 +66,7 @@ func (h *Handlers) handleSignUp(w http.ResponseWriter, r *http.Request) {
 	h.mu.Lock()
 
 	var idUser uint64 = 0
-	var defaultImage = "images/avatar.png"
+	var defaultImage = "images/avatar.jpg"
 
 	if len(h.users) > 0 {
 		idUser = h.users[len(h.users)-1].ID + 1
@@ -142,19 +144,21 @@ func (h *Handlers) handleSignInGet(w http.ResponseWriter, r *http.Request) {
 	log.Println(cookieUsername)
 
 	if cookieUsername != "" {
-		cookieUsernameInput := CredentialsInput{
-			Username: cookieUsername,
-		}
+		// cookieUsernameInput := CredentialsInput{
+		// 	Username: cookieUsername,
+		// }
 
-		h.setImage(w, h.ReadCookieAvatar(w, r))
+		path := pathToImages + h.ReadCookieAvatar(w, r)
 
-		encoder := json.NewEncoder(w)
-		err := encoder.Encode(cookieUsernameInput)
-		if err != nil {
-			log.Println("Error while encoding")
-			w.Write([]byte("{}"))
-			return
-		}
+		h.setImage(w, path)
+
+		// encoder := json.NewEncoder(w)
+		// err := encoder.Encode(cookieUsernameInput)
+		// if err != nil {
+		// 	log.Println("Error while encoding")
+		// 	w.Write([]byte("{}"))
+		// 	return
+		// }
 	}
 }
 
@@ -226,9 +230,9 @@ func loadAvatar(w http.ResponseWriter, r *http.Request, username string) {
 	}
 	defer src.Close()
 
-	dst, err := os.Create(filepath.Join("/root/golang/2019_2_TODO/server/images/", hdr.Filename))
-	os.Rename(filepath.Join("/root/golang/2019_2_TODO/server/images/", hdr.Filename),
-		filepath.Join("/root/golang/2019_2_TODO/server/images/", username+".jpg"))
+	dst, err := os.Create(filepath.Join(pathToImages+`images`, hdr.Filename))
+	os.Rename(filepath.Join(pathToImages+`images`, hdr.Filename),
+		filepath.Join(pathToImages+`images`, username+".jpg"))
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
@@ -264,15 +268,21 @@ func (h *Handlers) handleGetProfile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) setImage(w http.ResponseWriter, path string) {
-	img, err := os.Open(path)
+	file, err := os.Open(path)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
 	}
-	defer img.Close()
+	defer file.Close()
+
+	img, err := jpeg.Decode(file)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
 
 	w.Header().Set("Content-Type", "image/jpeg")
-	io.Copy(w, img)
+	jpeg.Encode(w, img, nil)
 }
 
 func (h *Handlers) handleLogout(w http.ResponseWriter, r *http.Request) {
