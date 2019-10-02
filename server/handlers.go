@@ -78,6 +78,8 @@ func (h *Handlers) handleSignUp(w http.ResponseWriter, r *http.Request) {
 	})
 	h.mu.Unlock()
 
+	SetCookie(w, newUserInput.Username)
+
 	log.Println(newUserInput.Username)
 
 }
@@ -143,6 +145,8 @@ func (h *Handlers) handleSignInGet(w http.ResponseWriter, r *http.Request) {
 		cookieUsernameInput := CredentialsInput{
 			Username: cookieUsername,
 		}
+
+		h.setImage(w, h.ReadCookieAvatar(w, r))
 
 		encoder := json.NewEncoder(w)
 		err := encoder.Encode(cookieUsernameInput)
@@ -257,6 +261,18 @@ func (h *Handlers) handleGetProfile(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Error while encoding json: %s", err)
 		w.Write([]byte("{}"))
 	}
+}
+
+func (h *Handlers) setImage(w http.ResponseWriter, path string) {
+	img, err := os.Open(path)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	defer img.Close()
+
+	w.Header().Set("Content-Type", "image/jpeg")
+	io.Copy(w, img)
 }
 
 func (h *Handlers) handleLogout(w http.ResponseWriter, r *http.Request) {

@@ -45,7 +45,7 @@ func main() {
 		handlers.handleSignInGet(w, r)
 	})
 
-	http.HandleFunc("/profile/", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/signin/profile/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application-json")
 
 		log.Println(r.URL.Path)
@@ -59,7 +59,7 @@ func main() {
 
 	})
 
-	http.HandleFunc("/profileImage/", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/signin/profileImage/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application-json")
 
 		log.Println(r.URL.Path)
