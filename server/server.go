@@ -88,16 +88,18 @@ func main() {
 	})
 
 	http.HandleFunc("/images/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "image/png")
+
 		w.Header().Set("Access-Control-Allow-Origin", frontIp)
 		w.Header().Set("Access-Control-Allow-Methods", "GET")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
 		log.Println(r.URL.Path)
 
-		absPath := "http://93.171.139.196:780/"
 		avatar := handlers.ReadCookieAvatar(w, r)
 
-		http.ServeFile(w, r, absPath+avatar)
+		http.ServeFile(w, r, avatar)
 	})
 
 	http.ListenAndServe(":8080", nil)

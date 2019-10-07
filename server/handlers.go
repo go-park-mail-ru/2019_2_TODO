@@ -144,9 +144,10 @@ func (h *Handlers) handleSignInGet(w http.ResponseWriter, r *http.Request) {
 	log.Println(cookieUsername)
 
 	if cookieUsername != "" {
+		absPath := "http://93.171.139.196:780/"
 		cookieUsernameInput := CredentialsInput{
 			Username: cookieUsername,
-			Image:    cookieAvatar,
+			Image:    absPath + cookieAvatar,
 		}
 
 		encoder := json.NewEncoder(w)
