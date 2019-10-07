@@ -65,7 +65,7 @@ func (h *Handlers) handleSignUp(w http.ResponseWriter, r *http.Request) {
 	h.mu.Lock()
 
 	var idUser uint64 = 0
-	var defaultImage = "images/avatar.jpeg"
+	var defaultImage = "images/avatar.png"
 
 	if len(h.users) > 0 {
 		idUser = h.users[len(h.users)-1].ID + 1
