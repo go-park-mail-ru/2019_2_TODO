@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/gorilla/securecookie"
-	"image/jpeg"
 	"io"
 	"log"
 	"net/http"
@@ -15,7 +14,7 @@ import (
 	"time"
 )
 
-const clientIp = "http://93.171.139.195:780"
+const frontIp = "http://93.171.139.195:780"
 const pathToImages = `/root/golang/test/2019_2_TODO/server/`
 
 var cookieHandler = securecookie.New(
@@ -44,7 +43,7 @@ type Handlers struct {
 func (h *Handlers) handleSignUp(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	w.Header().Set("Access-Control-Allow-Origin", clientIp)
+	w.Header().Set("Access-Control-Allow-Origin", frontIp)
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
@@ -89,7 +88,7 @@ func (h *Handlers) handleSignUp(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) handleSignIn(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	w.Header().Set("Access-Control-Allow-Origin", clientIp)
+	w.Header().Set("Access-Control-Allow-Origin", frontIp)
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
@@ -135,37 +134,35 @@ func (h *Handlers) handleSignIn(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) handleSignInGet(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", clientIp)
+	w.Header().Set("Access-Control-Allow-Origin", frontIp)
 	w.Header().Set("Access-Control-Allow-Methods", "GET")
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
 
 	cookieUsername := h.ReadCookieUsername(w, r)
+	cookieAvatar := h.ReadCookieAvatar(w, r)
 
 	log.Println(cookieUsername)
 
 	if cookieUsername != "" {
-		// cookieUsernameInput := CredentialsInput{
-		// 	Username: cookieUsername,
-		// }
+		cookieUsernameInput := CredentialsInput{
+			Username: cookieUsername,
+			Image:    cookieAvatar,
+		}
 
-		path := pathToImages + h.ReadCookieAvatar(w, r)
-
-		h.setImage(w, path)
-
-		// encoder := json.NewEncoder(w)
-		// err := encoder.Encode(cookieUsernameInput)
-		// if err != nil {
-		// 	log.Println("Error while encoding")
-		// 	w.Write([]byte("{}"))
-		// 	return
-		// }
+		encoder := json.NewEncoder(w)
+		err := encoder.Encode(cookieUsernameInput)
+		if err != nil {
+			log.Println("Error while encoding")
+			w.Write([]byte("{}"))
+			return
+		}
 	}
 }
 
 func (h *Handlers) handleChangeProfile(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	w.Header().Set("Access-Control-Allow-Origin", clientIp)
+	w.Header().Set("Access-Control-Allow-Origin", frontIp)
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
@@ -200,7 +197,7 @@ func (h *Handlers) handleChangeProfile(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) handleChangeImage(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	w.Header().Set("Access-Control-Allow-Origin", clientIp)
+	w.Header().Set("Access-Control-Allow-Origin", frontIp)
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
@@ -244,7 +241,7 @@ func loadAvatar(w http.ResponseWriter, r *http.Request, username string) {
 
 func (h *Handlers) handleGetProfile(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set("Access-Control-Allow-Origin", clientIp)
+	w.Header().Set("Access-Control-Allow-Origin", frontIp)
 	w.Header().Set("Access-Control-Allow-Methods", "GET")
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
 
@@ -267,23 +264,23 @@ func (h *Handlers) handleGetProfile(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Handlers) setImage(w http.ResponseWriter, path string) {
-	file, err := os.Open(path)
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
-	defer file.Close()
+// func (h *Handlers) setImage(w http.ResponseWriter, path string) {
+// 	file, err := os.Open(path)
+// 	if err != nil {
+// 		http.Error(w, err.Error(), 500)
+// 		return
+// 	}
+// 	defer file.Close()
 
-	img, err := jpeg.Decode(file)
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
+// 	img, err := jpeg.Decode(file)
+// 	if err != nil {
+// 		http.Error(w, err.Error(), 500)
+// 		return
+// 	}
 
-	w.Header().Set("Content-Type", "image/jpeg")
-	jpeg.Encode(w, img, nil)
-}
+// 	w.Header().Set("Content-Type", "image/jpeg")
+// 	jpeg.Encode(w, img, nil)
+// }
 
 func (h *Handlers) handleLogout(w http.ResponseWriter, r *http.Request) {
 	ClearCookie(w)
@@ -291,7 +288,7 @@ func (h *Handlers) handleLogout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) checkUsersForTesting(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", clientIp)
+	w.Header().Set("Access-Control-Allow-Origin", frontIp)
 	w.Header().Set("Access-Control-Allow-Methods", "GET")
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
 

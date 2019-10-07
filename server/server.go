@@ -87,5 +87,17 @@ func main() {
 		handlers.checkUsersForTesting(w, r)
 	})
 
+	http.HandleFunc("/images/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", frontIp)
+		w.Header().Set("Access-Control-Allow-Methods", "GET")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+
+		log.Println(r.URL.Path)
+
+		avatar := handlers.ReadCookieAvatar(w, r)
+
+		http.ServeFile(w, r, avatar)
+	})
+
 	http.ListenAndServe(":80", nil)
 }
