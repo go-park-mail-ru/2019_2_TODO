@@ -94,10 +94,11 @@ func main() {
 
 		log.Println(r.URL.Path)
 
+		absPath := "http://93.171.139.196:780/"
 		avatar := handlers.ReadCookieAvatar(w, r)
 
-		http.ServeFile(w, r, avatar)
+		http.ServeFile(w, r, absPath+avatar)
 	})
 
-	http.ListenAndServe(":80", nil)
+	http.ListenAndServe(":8080", nil)
 }
