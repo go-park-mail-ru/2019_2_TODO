@@ -142,11 +142,12 @@ func (h *Handlers) handleSignInGet(w http.ResponseWriter, r *http.Request) {
 	cookieAvatar := h.ReadCookieAvatar(w, r)
 
 	log.Println(cookieUsername)
+	log.Println(cookieAvatar)
 
 	if cookieUsername != "" {
 		cookieUsernameInput := CredentialsInput{
 			Username: cookieUsername,
-			Image:    cookieAvatar,
+			Image:   "http://93.171.139.196:780/"+ cookieAvatar,
 		}
 
 		encoder := json.NewEncoder(w)
@@ -212,26 +213,26 @@ func (h *Handlers) handleChangeImage(w http.ResponseWriter, r *http.Request) {
 
 	changeData := new(CredentialsInput)
 
-	changeData.Image = "images/" + username + ".jpg"
+	changeData.Image = "images/" + username + ".png"
 
-	oldUsername := h.ReadCookieUsername(w, r)
-
-	h.changeProfile(h.users, changeData, oldUsername)
+	h.changeProfile(h.users, changeData, username)
 }
 
 func loadAvatar(w http.ResponseWriter, r *http.Request, username string) {
 	src, hdr, err := r.FormFile("image")
 	if err != nil {
 		http.Error(w, err.Error(), 500)
+		log.Println("here_____________")
 		return
 	}
 	defer src.Close()
 
-	dst, err := os.Create(filepath.Join(pathToImages+`images`, hdr.Filename))
-	os.Rename(filepath.Join(pathToImages+`images`, hdr.Filename),
-		filepath.Join(pathToImages+`images`, username+".jpg"))
+	dst, err := os.Create(filepath.Join(pathToImages+`images/`, hdr.Filename))
+	os.Rename(filepath.Join(pathToImages+"images/", hdr.Filename),
+		filepath.Join(pathToImages+"images/", username+".png"))
 	if err != nil {
 		http.Error(w, err.Error(), 500)
+		log.Println("Im dead")
 		return
 	}
 	defer dst.Close()
@@ -264,27 +265,8 @@ func (h *Handlers) handleGetProfile(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// func (h *Handlers) setImage(w http.ResponseWriter, path string) {
-// 	file, err := os.Open(path)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), 500)
-// 		return
-// 	}
-// 	defer file.Close()
-
-// 	img, err := jpeg.Decode(file)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), 500)
-// 		return
-// 	}
-
-// 	w.Header().Set("Content-Type", "image/jpeg")
-// 	jpeg.Encode(w, img, nil)
-// }
-
 func (h *Handlers) handleLogout(w http.ResponseWriter, r *http.Request) {
 	ClearCookie(w)
-	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func (h *Handlers) checkUsersForTesting(w http.ResponseWriter, r *http.Request) {
@@ -355,7 +337,7 @@ func (h *Handlers) changeProfile(accounts []Credentials, changeProfileCredential
 	})
 
 	iter := sort.Search(len(accounts), func(i int) bool {
-		return accounts[i].Username == changeProfileCredentials.Username
+		return accounts[i].Username == oldUsername
 	})
 
 	if changeProfileCredentials.Username != "" {
@@ -419,6 +401,9 @@ func (h *Handlers) ReadCookieAvatar(w http.ResponseWriter, r *http.Request) stri
 			iter := sort.Search(len(accounts), func(i int) bool {
 				return accounts[i].Username == value["username"]
 			})
+			if iter >= len(accounts) {
+				return "images/avatar.png"
+			}
 			return accounts[iter].Image
 		}
 	}

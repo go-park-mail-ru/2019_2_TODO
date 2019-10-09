@@ -72,6 +72,9 @@ func main() {
 	})
 
 	http.HandleFunc("/logout/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", frontIp)
+                w.Header().Set("Access-Control-Allow-Methods", "GET")
+                w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.Header().Set("Content-Type", "application-json")
 
 		log.Println(r.URL.Path)
@@ -91,14 +94,17 @@ func main() {
 		w.Header().Set("Access-Control-Allow-Origin", frontIp)
 		w.Header().Set("Access-Control-Allow-Methods", "GET")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		w.Header().Set("Content-Type", "image/png")
 
 		log.Println(r.URL.Path)
 
-		absPath := "http://93.171.139.196:780/"
 		avatar := handlers.ReadCookieAvatar(w, r)
 
-		http.ServeFile(w, r, absPath+avatar)
+		log.Println(avatar)
+
+		http.ServeFile(w, r, "/root/golang/test/2019_2_TODO/server/"+avatar)
 	})
 
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(":80", nil)
 }
