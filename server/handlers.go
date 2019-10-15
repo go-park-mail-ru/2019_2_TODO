@@ -40,17 +40,49 @@ type Handlers struct {
 	mu    *sync.Mutex
 }
 
+func panicMiddware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if err := recover(); err != nil {
+				log.Println("PanicMiddleware", r.URL.Path)
+				log.Printf("panic during request: %s", err)
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte("internal error"))
+			}
+		}()
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func accessLogMiddware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Println("AccessLogMiddleware", r.URL.Path)
+		start := time.Now()
+		next.ServeHTTP(w, r)
+		log.Printf("[%s] %s, %s %s\n",
+			r.Method, r.RemoteAddr, r.URL.Path, time.Since(start))
+	})
+}
+
+func corsMiddware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Println("CorsMiddware", r.URL.Path)
+		w.Header().Set("Access-Control-Allow-Origin", frontIp)
+		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+
+		if r.Method == "OPTIONS" {
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 func (h *Handlers) handleSignUp(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-
-	w.Header().Set("Access-Control-Allow-Origin", frontIp)
-	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	w.Header().Set("Access-Control-Allow-Credentials", "true")
-
-	if r.Method == "OPTIONS" {
-		return
-	}
 
 	decoder := json.NewDecoder(r.Body)
 	newUserInput := new(CredentialsInput)
@@ -87,15 +119,6 @@ func (h *Handlers) handleSignUp(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handlers) handleSignIn(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-
-	w.Header().Set("Access-Control-Allow-Origin", frontIp)
-	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	w.Header().Set("Access-Control-Allow-Credentials", "true")
-
-	if r.Method == "OPTIONS" {
-		return
-	}
 
 	decoder := json.NewDecoder(r.Body)
 	authCredentials := new(CredentialsInput)
@@ -134,10 +157,6 @@ func (h *Handlers) handleSignIn(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) handleSignInGet(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", frontIp)
-	w.Header().Set("Access-Control-Allow-Methods", "GET")
-	w.Header().Set("Access-Control-Allow-Credentials", "true")
-
 	cookieUsername := h.ReadCookieUsername(w, r)
 	cookieAvatar := h.ReadCookieAvatar(w, r)
 
@@ -147,7 +166,7 @@ func (h *Handlers) handleSignInGet(w http.ResponseWriter, r *http.Request) {
 	if cookieUsername != "" {
 		cookieUsernameInput := CredentialsInput{
 			Username: cookieUsername,
-			Image:   "http://93.171.139.196:780/"+ cookieAvatar,
+			Image:    "http://93.171.139.196:780/" + cookieAvatar,
 		}
 
 		encoder := json.NewEncoder(w)
@@ -162,15 +181,6 @@ func (h *Handlers) handleSignInGet(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handlers) handleChangeProfile(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-
-	w.Header().Set("Access-Control-Allow-Origin", frontIp)
-	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	w.Header().Set("Access-Control-Allow-Credentials", "true")
-
-	if r.Method == "OPTIONS" {
-		return
-	}
 
 	decoder := json.NewDecoder(r.Body)
 	changeProfileCredentials := new(CredentialsInput)
@@ -197,15 +207,6 @@ func (h *Handlers) handleChangeProfile(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handlers) handleChangeImage(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-
-	w.Header().Set("Access-Control-Allow-Origin", frontIp)
-	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	w.Header().Set("Access-Control-Allow-Credentials", "true")
-
-	if r.Method == "OPTIONS" {
-		return
-	}
 
 	username := h.ReadCookieUsername(w, r)
 
@@ -241,11 +242,6 @@ func loadAvatar(w http.ResponseWriter, r *http.Request, username string) {
 }
 
 func (h *Handlers) handleGetProfile(w http.ResponseWriter, r *http.Request) {
-
-	w.Header().Set("Access-Control-Allow-Origin", frontIp)
-	w.Header().Set("Access-Control-Allow-Methods", "GET")
-	w.Header().Set("Access-Control-Allow-Credentials", "true")
-
 	encoder := json.NewEncoder(w)
 
 	h.mu.Lock()
@@ -270,10 +266,6 @@ func (h *Handlers) handleLogout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) checkUsersForTesting(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", frontIp)
-	w.Header().Set("Access-Control-Allow-Methods", "GET")
-	w.Header().Set("Access-Control-Allow-Credentials", "true")
-
 	if h.ReadCookieUsername(w, r) != "" {
 		log.Println("Success checking cook")
 	}
