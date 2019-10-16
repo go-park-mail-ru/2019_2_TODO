@@ -1,97 +1,40 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"github.com/gorilla/securecookie"
+	"github.com/labstack/echo"
 	"io"
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
 	"sort"
 	"sync"
 	"time"
 )
 
-const frontIp = "http://93.171.139.195:780"
-const pathToImages = `/root/golang/test/2019_2_TODO/server/`
+const (
+	frontIp      = "http://93.171.139.195:780"
+	backIp       = "http://93.171.139.196:780"
+	pathToImages = `/root/golang/test/2019_2_TODO/server/`
+)
 
 var cookieHandler = securecookie.New(
 	securecookie.GenerateRandomKey(64),
 	securecookie.GenerateRandomKey(32),
 )
 
-type CredentialsInput struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-	Image    string `json:"image"`
-}
-
-type Credentials struct {
-	ID       uint64 `json:"id"`
-	Username string `json:"username"`
-	Password string `json:"-"`
-	Image    string `json:"image"`
-}
-
 type Handlers struct {
 	users []Credentials
 	mu    *sync.Mutex
 }
 
-func panicMiddware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		defer func() {
-			if err := recover(); err != nil {
-				log.Println("PanicMiddleware", r.URL.Path)
-				log.Printf("panic during request: %s", err)
-				w.WriteHeader(http.StatusInternalServerError)
-				w.Write([]byte("internal error"))
-			}
-		}()
+func (h *Handlers) handleSignUp(ctx echo.Context) error {
 
-		next.ServeHTTP(w, r)
-	})
-}
-
-func accessLogMiddware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Println("AccessLogMiddleware", r.URL.Path)
-		start := time.Now()
-		next.ServeHTTP(w, r)
-		log.Printf("[%s] %s, %s %s\n",
-			r.Method, r.RemoteAddr, r.URL.Path, time.Since(start))
-	})
-}
-
-func corsMiddware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Println("CorsMiddware", r.URL.Path)
-		w.Header().Set("Access-Control-Allow-Origin", frontIp)
-		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-		w.Header().Set("Access-Control-Allow-Credentials", "true")
-
-		if r.Method == "OPTIONS" {
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
-}
-
-func (h *Handlers) handleSignUp(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-
-	decoder := json.NewDecoder(r.Body)
 	newUserInput := new(CredentialsInput)
 
-	err := decoder.Decode(newUserInput)
-	if err != nil {
-		log.Printf("Error while decoding body: %s", err)
-		w.Write([]byte("{}"))
-		return
+	if err := ctx.Bind(newUserInput); err != nil {
+		return ctx.JSON(http.StatusBadRequest, "")
 	}
 
 	h.mu.Lock()
@@ -111,54 +54,47 @@ func (h *Handlers) handleSignUp(w http.ResponseWriter, r *http.Request) {
 	})
 	h.mu.Unlock()
 
-	SetCookie(w, newUserInput.Username)
+	SetCookie(ctx, newUserInput.Username)
 
 	log.Println(newUserInput.Username)
 
+	return ctx.JSON(http.StatusOK, "")
 }
 
-func (h *Handlers) handleSignIn(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
+func (h *Handlers) handleSignIn(ctx echo.Context) error {
 
-	decoder := json.NewDecoder(r.Body)
 	authCredentials := new(CredentialsInput)
 
-	err := decoder.Decode(authCredentials)
-	if err != nil {
-		log.Printf("Error while decoding body: %s", err)
-		w.Write([]byte("{}"))
-		return
+	if err := ctx.Bind(authCredentials); err != nil {
+		return ctx.JSON(http.StatusBadRequest, "")
 	}
 
 	h.mu.Lock()
 
 	accounts := h.users
 
-	err = h.checkUsername(accounts, authCredentials)
+	err := h.checkUsername(accounts, authCredentials)
 
 	if err != nil {
-		log.Printf("%s", err)
-		w.Write([]byte("{}"))
-		return
+		return ctx.JSON(http.StatusOK, "")
 	}
 
 	err = h.checkPassword(accounts, authCredentials)
 
 	if err != nil {
-		log.Printf("%s", err)
-		w.Write([]byte("{}"))
-		return
+		return ctx.JSON(http.StatusUnauthorized, "")
 	}
 
-	SetCookie(w, authCredentials.Username)
+	SetCookie(ctx, authCredentials.Username)
 
 	h.mu.Unlock()
 
+	return ctx.JSON(http.StatusOK, "")
 }
 
-func (h *Handlers) handleSignInGet(w http.ResponseWriter, r *http.Request) {
-	cookieUsername := h.ReadCookieUsername(w, r)
-	cookieAvatar := h.ReadCookieAvatar(w, r)
+func (h *Handlers) handleSignInGet(ctx echo.Context) error {
+	cookieUsername := h.ReadCookieUsername(ctx)
+	cookieAvatar := h.ReadCookieAvatar(ctx)
 
 	log.Println(cookieUsername)
 	log.Println(cookieAvatar)
@@ -166,120 +102,131 @@ func (h *Handlers) handleSignInGet(w http.ResponseWriter, r *http.Request) {
 	if cookieUsername != "" {
 		cookieUsernameInput := CredentialsInput{
 			Username: cookieUsername,
-			Image:    "http://93.171.139.196:780/" + cookieAvatar,
+			Image:    backIp + cookieAvatar,
 		}
 
-		encoder := json.NewEncoder(w)
-		err := encoder.Encode(cookieUsernameInput)
-		if err != nil {
-			log.Println("Error while encoding")
-			w.Write([]byte("{}"))
-			return
-		}
+		return ctx.JSON(http.StatusCreated, cookieUsernameInput)
 	}
+
+	return ctx.JSON(http.StatusOK, "")
 }
 
-func (h *Handlers) handleChangeProfile(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
+func (h *Handlers) handleOk(ctx echo.Context) error {
+	return ctx.JSON(http.StatusOK, "")
+}
 
-	decoder := json.NewDecoder(r.Body)
+func (h *Handlers) handleChangeProfile(ctx echo.Context) error {
+
 	changeProfileCredentials := new(CredentialsInput)
 
-	err := decoder.Decode(changeProfileCredentials)
-	if err != nil {
-		log.Printf("Error while decoding body: %s", err)
-		w.Write([]byte("{}"))
-		return
+	if err := ctx.Bind(changeProfileCredentials); err != nil {
+		return ctx.JSON(http.StatusBadRequest, "")
 	}
 
 	h.mu.Lock()
 
-	oldUsername := h.ReadCookieUsername(w, r)
+	oldUsername := h.ReadCookieUsername(ctx)
 
 	h.changeProfile(h.users, changeProfileCredentials, oldUsername)
 
-	ClearCookie(w)
-	SetCookie(w, changeProfileCredentials.Username)
+	ClearCookie(ctx)
+	SetCookie(ctx, changeProfileCredentials.Username)
 
 	h.mu.Unlock()
 
+	return ctx.JSON(http.StatusOK, "")
 }
 
-func (h *Handlers) handleChangeImage(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
+func (h *Handlers) handleChangeImage(ctx echo.Context) error {
 
-	username := h.ReadCookieUsername(w, r)
+	username := h.ReadCookieUsername(ctx)
 
-	loadAvatar(w, r, username)
+	err := loadAvatar(ctx, username)
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, "")
+	}
 
 	changeData := new(CredentialsInput)
 
 	changeData.Image = "images/" + username + ".png"
 
 	h.changeProfile(h.users, changeData, username)
+
+	return ctx.JSON(http.StatusOK, "")
 }
 
-func loadAvatar(w http.ResponseWriter, r *http.Request, username string) {
-	src, hdr, err := r.FormFile("image")
+func loadAvatar(ctx echo.Context, username string) error {
+	file, err := ctx.FormFile("image")
 	if err != nil {
-		http.Error(w, err.Error(), 500)
-		log.Println("here_____________")
-		return
+		log.Println("Error formFile")
+		return err
+	}
+
+	src, err := file.Open()
+	if err != nil {
+		log.Println("Error file while opening")
+		return err
 	}
 	defer src.Close()
 
-	dst, err := os.Create(filepath.Join(pathToImages+`images/`, hdr.Filename))
-	os.Rename(filepath.Join(pathToImages+"images/", hdr.Filename),
-		filepath.Join(pathToImages+"images/", username+".png"))
+	dst, err := os.Create(pathToImages + `images/` + file.Filename)
+	os.Rename(pathToImages+"images/"+file.Filename,
+		pathToImages+"images/"+username+".png")
 	if err != nil {
-		http.Error(w, err.Error(), 500)
-		log.Println("Im dead")
-		return
+		log.Println("Error creating file")
+		return err
 	}
 	defer dst.Close()
 
-	io.Copy(dst, src)
+	if _, err = io.Copy(dst, src); err != nil {
+		log.Println("Error copy file")
+		return err
+	}
+
+	return nil
 }
 
-func (h *Handlers) handleGetProfile(w http.ResponseWriter, r *http.Request) {
-	encoder := json.NewEncoder(w)
+func (h *Handlers) handleGetProfile(ctx echo.Context) error {
 
 	h.mu.Lock()
 
 	cookiesData := CredentialsInput{
-		Username: h.ReadCookieUsername(w, r),
-		Image:    h.ReadCookieAvatar(w, r),
+		Username: h.ReadCookieUsername(ctx),
+		Image:    h.ReadCookieAvatar(ctx),
 	}
-
-	err := encoder.Encode(cookiesData)
 
 	h.mu.Unlock()
 
-	if err != nil {
-		log.Printf("Error while encoding json: %s", err)
-		w.Write([]byte("{}"))
-	}
+	return ctx.JSON(http.StatusOK, cookiesData)
 }
 
-func (h *Handlers) handleLogout(w http.ResponseWriter, r *http.Request) {
-	ClearCookie(w)
+func (h *Handlers) handleGetImage(ctx echo.Context) error {
+	avatar := h.ReadCookieAvatar(ctx)
+
+	log.Println(avatar)
+
+	http.ServeFile(ctx.Response(), ctx.Request(), pathToImages+avatar)
+
+	return ctx.JSON(http.StatusOK, "")
 }
 
-func (h *Handlers) checkUsersForTesting(w http.ResponseWriter, r *http.Request) {
-	if h.ReadCookieUsername(w, r) != "" {
+func (h *Handlers) handleLogout(ctx echo.Context) error {
+	ClearCookie(ctx)
+	return ctx.JSON(http.StatusOK, "")
+}
+
+func (h *Handlers) checkUsersForTesting(ctx echo.Context) error {
+	if h.ReadCookieUsername(ctx) != "" {
 		log.Println("Success checking cook")
 	}
 
-	encoder := json.NewEncoder(w)
 	h.mu.Lock()
-	err := encoder.Encode(h.users)
+	ctx.JSON(http.StatusOK, h.users)
 	h.mu.Unlock()
-	if err != nil {
-		log.Printf("error while marshalling JSON: %s", err)
-		w.Write([]byte("{}"))
-		return
-	}
+
 	log.Println(h.users)
+
+	return ctx.JSON(http.StatusOK, "")
 }
 
 func (h *Handlers) checkUsername(accounts []Credentials, authCredentials *CredentialsInput) error {
@@ -343,7 +290,7 @@ func (h *Handlers) changeProfile(accounts []Credentials, changeProfileCredential
 	}
 }
 
-func SetCookie(w http.ResponseWriter, userName string) {
+func SetCookie(ctx echo.Context, userName string) {
 	value := map[string]string{
 		"username": userName,
 	}
@@ -357,22 +304,22 @@ func SetCookie(w http.ResponseWriter, userName string) {
 			Expires: expiration,
 		}
 
-		http.SetCookie(w, &cookie)
+		http.SetCookie(ctx.Response(), &cookie)
 	}
 }
 
-func ClearCookie(w http.ResponseWriter) {
+func ClearCookie(ctx echo.Context) {
 	cookie := http.Cookie{
 		Name:    "session_token",
 		Value:   "",
 		Path:    "/",
 		Expires: time.Unix(0, 0),
 	}
-	http.SetCookie(w, &cookie)
+	http.SetCookie(ctx.Response(), &cookie)
 }
 
-func (h *Handlers) ReadCookieUsername(w http.ResponseWriter, r *http.Request) string {
-	if cookie, err := r.Cookie("session_token"); err == nil {
+func (h *Handlers) ReadCookieUsername(ctx echo.Context) string {
+	if cookie, err := ctx.Request().Cookie("session_token"); err == nil {
 		value := make(map[string]string)
 		if err = cookieHandler.Decode("session_token", cookie.Value, &value); err == nil {
 			return value["username"]
@@ -381,8 +328,8 @@ func (h *Handlers) ReadCookieUsername(w http.ResponseWriter, r *http.Request) st
 	return ""
 }
 
-func (h *Handlers) ReadCookieAvatar(w http.ResponseWriter, r *http.Request) string {
-	if cookie, err := r.Cookie("session_token"); err == nil {
+func (h *Handlers) ReadCookieAvatar(ctx echo.Context) string {
+	if cookie, err := ctx.Request().Cookie("session_token"); err == nil {
 		value := make(map[string]string)
 		if err = cookieHandler.Decode("session_token", cookie.Value, &value); err == nil {
 			accounts := h.users
