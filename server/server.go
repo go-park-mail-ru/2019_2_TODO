@@ -1,10 +1,11 @@
 package main
 
 import (
+	"database/sql"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
+	"log"
 	"net/http"
-	"sync"
 )
 
 const listenAddr = "127.0.0.1:8080"
@@ -12,9 +13,25 @@ const listenAddr = "127.0.0.1:8080"
 func main() {
 	e := echo.New()
 
+	dsn := "toringol:12345@tcp(localhost:3306)/users?"
+	dsn += "&charset=utf8"
+	dsn += "&interpolateParams=true"
+
+	db, err := sql.Open("mysql", dsn)
+
+	db.SetMaxOpenConns(10)
+
+	err = db.Ping()
+	if err != nil {
+		log.Println("Error while Ping")
+	}
+
+	usersRepo := &UsersRepository{
+		DB: db,
+	}
+
 	handlers := Handlers{
-		users: make([]Credentials, 0),
-		mu:    &sync.Mutex{},
+		Users: usersRepo,
 	}
 
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
