@@ -1,0 +1,653 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">mod/handlers.go (0.0%)</option>
+				
+				<option value="file1">mod/server.go (0.0%)</option>
+				
+				<option value="file2">mod/user_repo.go (100.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package main
+
+import (
+        _ "github.com/go-sql-driver/mysql"
+        "github.com/gorilla/securecookie"
+        "github.com/labstack/echo"
+        "io"
+        "log"
+        "net/http"
+        "os"
+        "sort"
+        "time"
+)
+
+const (
+        frontIp      = "http://93.171.139.195:780"
+        backIp       = "http://93.171.139.196:780"
+        pathToImages = `/root/golang/test/2019_2_TODO/server/`
+)
+
+var cookieHandler = securecookie.New(
+        securecookie.GenerateRandomKey(64),
+        securecookie.GenerateRandomKey(32),
+)
+
+type UserCRUD interface {
+        ListAll() ([]*User, error)
+        SelectByID(int64) (*User, error)
+        SelectDataByLogin(string) (*User, error)
+        SelectByLoginAndPassword(*User) (*User, error)
+        Create(*User) (int64, error)
+        Update(*User) (int64, error)
+        Delete(int64) (int64, error)
+}
+
+type Handlers struct {
+        Users UserCRUD
+}
+
+func (h *Handlers) handleSignUp(ctx echo.Context) error <span class="cov0" title="0">{
+
+        newUserInput := new(User)
+
+        if err := ctx.Bind(newUserInput); err != nil </span><span class="cov0" title="0">{
+                return ctx.JSON(http.StatusBadRequest, "")
+        }</span>
+
+        <span class="cov0" title="0">lastID, err := h.Users.Create(newUserInput)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Println("Items.Create err:", err)
+                return ctx.JSON(http.StatusInternalServerError, "")
+        }</span>
+
+        <span class="cov0" title="0">log.Println("Last id: ", lastID)
+
+        SetCookie(ctx, newUserInput.Username)
+
+        log.Println(newUserInput.Username)
+
+        return ctx.JSON(http.StatusOK, "")</span>
+}
+
+func (h *Handlers) handleSignIn(ctx echo.Context) error <span class="cov0" title="0">{
+
+        authCredentials := new(User)
+
+        if err := ctx.Bind(authCredentials); err != nil </span><span class="cov0" title="0">{
+                return ctx.JSON(http.StatusBadRequest, "")
+        }</span>
+
+        <span class="cov0" title="0">userRecord, err := h.Users.SelectByLoginAndPassword(authCredentials)
+
+        if err != nil </span><span class="cov0" title="0">{
+                return ctx.JSON(http.StatusUnauthorized, "")
+        }</span>
+
+        <span class="cov0" title="0">log.Println("UserData: ID - ", userRecord.ID, " Login - ", userRecord.Username,
+                " Avatar - ", userRecord.Avatar)
+
+        SetCookie(ctx, authCredentials.Username)
+
+        return ctx.JSON(http.StatusOK, "")</span>
+}
+
+func (h *Handlers) handleSignInGet(ctx echo.Context) error <span class="cov0" title="0">{
+        cookieUsername := h.ReadCookieUsername(ctx)
+        cookieAvatar := h.ReadCookieAvatar(ctx)
+
+        log.Println(cookieUsername)
+        log.Println(cookieAvatar)
+
+        if cookieUsername != "" </span><span class="cov0" title="0">{
+                cookieUsernameInput := CredentialsInput{
+                        Username: cookieUsername,
+                        Image:    backIp + cookieAvatar,
+                }
+
+                return ctx.JSON(http.StatusCreated, cookieUsernameInput)
+        }</span>
+
+        <span class="cov0" title="0">return ctx.JSON(http.StatusOK, "")</span>
+}
+
+func (h *Handlers) handleOk(ctx echo.Context) error <span class="cov0" title="0">{
+        return ctx.JSON(http.StatusOK, "")
+}</span>
+
+func (h *Handlers) handleChangeProfile(ctx echo.Context) error <span class="cov0" title="0">{
+
+        changeProfileCredentials := new(User)
+
+        if err := ctx.Bind(changeProfileCredentials); err != nil </span><span class="cov0" title="0">{
+                return ctx.JSON(http.StatusBadRequest, "")
+        }</span>
+
+        <span class="cov0" title="0">oldUsername := h.ReadCookieUsername(ctx)
+
+        oldData, err := h.Users.SelectDataByLogin(oldUsername)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Println("Users.Update error: ", err)
+                return ctx.JSON(http.StatusInternalServerError, "")
+        }</span>
+
+        <span class="cov0" title="0">changeProfileCredentials.ID = oldData.ID
+        changeProfileCredentials.Avatar = oldData.Avatar
+        if changeProfileCredentials.Username == "" </span><span class="cov0" title="0">{
+                changeProfileCredentials.Username = oldData.Username
+        }</span>
+        <span class="cov0" title="0">if changeProfileCredentials.Password == "" </span><span class="cov0" title="0">{
+                changeProfileCredentials.Password = oldData.Password
+        }</span>
+
+        <span class="cov0" title="0">affected, err := h.Users.Update(changeProfileCredentials)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Println("Users.Update error: ", err)
+                return ctx.JSON(http.StatusInternalServerError, "")
+        }</span>
+        <span class="cov0" title="0">log.Println("Update affectedRows: ", affected)
+
+        ClearCookie(ctx)
+        SetCookie(ctx, changeProfileCredentials.Username)
+
+        return ctx.JSON(http.StatusOK, "")</span>
+}
+
+func (h *Handlers) handleChangeImage(ctx echo.Context) error <span class="cov0" title="0">{
+
+        username := h.ReadCookieUsername(ctx)
+
+        err := loadAvatar(ctx, username)
+        if err != nil </span><span class="cov0" title="0">{
+                return ctx.JSON(http.StatusInternalServerError, "")
+        }</span>
+
+        <span class="cov0" title="0">changeData := new(User)
+
+        changeData.Avatar = "images/" + username + ".png"
+
+        oldData, err := h.Users.SelectDataByLogin(username)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Println("Users.Update error: ", err)
+                return ctx.JSON(http.StatusInternalServerError, "")
+        }</span>
+
+        <span class="cov0" title="0">changeData.ID = oldData.ID
+
+        affected, err := h.Users.Update(changeData)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Println("Users.Update error: ", err)
+                return ctx.JSON(http.StatusInternalServerError, "")
+        }</span>
+        <span class="cov0" title="0">log.Println("Update affectedRows: ", affected)
+
+        return ctx.JSON(http.StatusOK, "")</span>
+}
+
+func loadAvatar(ctx echo.Context, username string) error <span class="cov0" title="0">{
+        file, err := ctx.FormFile("image")
+        if err != nil </span><span class="cov0" title="0">{
+                log.Println("Error formFile")
+                return err
+        }</span>
+
+        <span class="cov0" title="0">src, err := file.Open()
+        if err != nil </span><span class="cov0" title="0">{
+                log.Println("Error file while opening")
+                return err
+        }</span>
+        <span class="cov0" title="0">defer src.Close()
+
+        dst, err := os.Create(pathToImages + `images/` + file.Filename)
+        os.Rename(pathToImages+"images/"+file.Filename,
+                pathToImages+"images/"+username+".png")
+        if err != nil </span><span class="cov0" title="0">{
+                log.Println("Error creating file")
+                return err
+        }</span>
+        <span class="cov0" title="0">defer dst.Close()
+
+        if _, err = io.Copy(dst, src); err != nil </span><span class="cov0" title="0">{
+                log.Println("Error copy file")
+                return err
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+func (h *Handlers) handleGetProfile(ctx echo.Context) error <span class="cov0" title="0">{
+
+        cookiesData := CredentialsInput{
+                Username: h.ReadCookieUsername(ctx),
+                Image:    h.ReadCookieAvatar(ctx),
+        }
+
+        return ctx.JSON(http.StatusOK, cookiesData)
+}</span>
+
+func (h *Handlers) handleGetImage(ctx echo.Context) error <span class="cov0" title="0">{
+        avatar := h.ReadCookieAvatar(ctx)
+
+        log.Println(avatar)
+
+        http.ServeFile(ctx.Response(), ctx.Request(), pathToImages+avatar)
+
+        return ctx.JSON(http.StatusOK, "")
+}</span>
+
+func (h *Handlers) handleLogout(ctx echo.Context) error <span class="cov0" title="0">{
+        ClearCookie(ctx)
+        return ctx.JSON(http.StatusOK, "")
+}</span>
+
+func (h *Handlers) checkUsersForTesting(ctx echo.Context) error <span class="cov0" title="0">{
+        if h.ReadCookieUsername(ctx) != "" </span><span class="cov0" title="0">{
+                log.Println("Success checking cook")
+        }</span>
+
+        <span class="cov0" title="0">users, err := h.Users.ListAll()
+        if err != nil </span><span class="cov0" title="0">{
+                log.Println("Error while getting all users: ", err)
+                return ctx.JSON(http.StatusInternalServerError, "")
+        }</span>
+
+        <span class="cov0" title="0">ctx.JSON(http.StatusOK, users)
+
+        log.Println(users)
+
+        return ctx.JSON(http.StatusOK, "")</span>
+}
+
+// func (h *Handlers) checkUsername(accounts []Credentials, authCredentials *CredentialsInput) error {
+//         if len(accounts) == 0 {
+//                 return errors.New("No users")
+//         }
+
+//         sort.Slice(accounts[:], func(i, j int) bool {
+//                 return accounts[i].Username &lt; accounts[j].Username
+//         })
+
+//         iter := sort.Search(len(accounts), func(i int) bool {
+//                 return accounts[i].Username == authCredentials.Username
+//         })
+
+//         if iter &lt; len(accounts) &amp;&amp; accounts[iter].Username == authCredentials.Username {
+//                 return nil
+//         } else {
+//                 return errors.New("No such user")
+//         }
+// }
+
+// func (h *Handlers) checkPassword(accounts []Credentials, authCredentials *CredentialsInput) error {
+
+//         if len(accounts) == 0 {
+//                 return errors.New("No users")
+//         }
+
+//         sort.Slice(accounts[:], func(i, j int) bool {
+//                 return accounts[i].Password &lt; accounts[j].Password
+//         })
+
+//         iter := sort.Search(len(accounts), func(i int) bool {
+//                 return accounts[i].Password == authCredentials.Password
+//         })
+
+//         if iter &lt; len(accounts) &amp;&amp; accounts[iter].Password == authCredentials.Password {
+//                 return nil
+//         } else {
+//                 return errors.New("Wrong password")
+//         }
+// }
+
+// func (h *Handlers) changeProfile(accounts []Credentials, changeProfileCredentials *CredentialsInput, oldUsername string) {
+//         sort.Slice(accounts[:], func(i, j int) bool {
+//                 return accounts[i].Username &lt; accounts[j].Username
+//         })
+
+//         iter := sort.Search(len(accounts), func(i int) bool {
+//                 return accounts[i].Username == oldUsername
+//         })
+
+//         if changeProfileCredentials.Username != "" {
+//                 accounts[iter].Username = changeProfileCredentials.Username
+//         }
+//         if changeProfileCredentials.Password != "" {
+//                 accounts[iter].Password = changeProfileCredentials.Password
+//         }
+//         if changeProfileCredentials.Image != "" {
+//                 accounts[iter].Image = changeProfileCredentials.Image
+//         }
+// }
+
+func SetCookie(ctx echo.Context, userName string) <span class="cov0" title="0">{
+        value := map[string]string{
+                "username": userName,
+        }
+
+        if encoded, err := cookieHandler.Encode("session_token", value); err == nil </span><span class="cov0" title="0">{
+                expiration := time.Now().Add(24 * time.Hour)
+                cookie := http.Cookie{
+                        Name:    "session_token",
+                        Value:   encoded,
+                        Path:    "/",
+                        Expires: expiration,
+                }
+
+                http.SetCookie(ctx.Response(), &amp;cookie)
+        }</span>
+}
+
+func ClearCookie(ctx echo.Context) <span class="cov0" title="0">{
+        cookie := http.Cookie{
+                Name:    "session_token",
+                Value:   "",
+                Path:    "/",
+                Expires: time.Unix(0, 0),
+        }
+        http.SetCookie(ctx.Response(), &amp;cookie)
+}</span>
+
+func (h *Handlers) ReadCookieUsername(ctx echo.Context) string <span class="cov0" title="0">{
+        if cookie, err := ctx.Request().Cookie("session_token"); err == nil </span><span class="cov0" title="0">{
+                value := make(map[string]string)
+                if err = cookieHandler.Decode("session_token", cookie.Value, &amp;value); err == nil </span><span class="cov0" title="0">{
+                        return value["username"]
+                }</span>
+        }
+        <span class="cov0" title="0">return ""</span>
+}
+
+func (h *Handlers) ReadCookieAvatar(ctx echo.Context) string <span class="cov0" title="0">{
+        if cookie, err := ctx.Request().Cookie("session_token"); err == nil </span><span class="cov0" title="0">{
+                value := make(map[string]string)
+                if err = cookieHandler.Decode("session_token", cookie.Value, &amp;value); err == nil </span><span class="cov0" title="0">{
+                        accounts, err := h.Users.ListAll()
+                        if err != nil </span><span class="cov0" title="0">{
+                                return ""
+                        }</span>
+                        <span class="cov0" title="0">sort.Slice(accounts[:], func(i, j int) bool </span><span class="cov0" title="0">{
+                                return accounts[i].Username &lt; accounts[j].Username
+                        }</span>)
+
+                        <span class="cov0" title="0">iter := sort.Search(len(accounts), func(i int) bool </span><span class="cov0" title="0">{
+                                return accounts[i].Username == value["username"]
+                        }</span>)
+                        <span class="cov0" title="0">if iter &gt;= len(accounts) </span><span class="cov0" title="0">{
+                                return "images/avatar.png"
+                        }</span>
+                        <span class="cov0" title="0">return accounts[iter].Avatar</span>
+                }
+        }
+        <span class="cov0" title="0">return ""</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package main
+
+import (
+        "database/sql"
+        "github.com/labstack/echo"
+        "github.com/labstack/echo/middleware"
+        "log"
+        "net/http"
+)
+
+const listenAddr = "127.0.0.1:8080"
+
+func main() <span class="cov0" title="0">{
+        e := echo.New()
+
+        dsn := "toringol:1234@tcp(localhost:3306)/users?"
+        dsn += "&amp;charset=utf8"
+        dsn += "&amp;interpolateParams=true"
+
+        db, err := sql.Open("mysql", dsn)
+
+        db.SetMaxOpenConns(10)
+
+        err = db.Ping()
+        if err != nil </span><span class="cov0" title="0">{
+                log.Println("Error while Ping")
+        }</span>
+
+        <span class="cov0" title="0">usersRepo := &amp;UsersRepository{
+                DB: db,
+        }
+
+        handlers := Handlers{
+                Users: usersRepo,
+        }
+
+        e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+                Format: "[${method}] ${remote_ip}, ${uri} ${status}\n",
+        }))
+        e.Use(middleware.Recover())
+        e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+                AllowOrigins:     []string{frontIp},
+                AllowMethods:     []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
+                AllowCredentials: true,
+        }))
+
+        e.GET("/", handlers.handleOk)
+        e.GET("/checkUsers/", handlers.checkUsersForTesting)
+        e.GET("/signin/", handlers.handleSignInGet)
+        e.GET("/signin/profile/", handlers.handleGetProfile)
+        e.GET("/logout/", handlers.handleLogout)
+        e.GET("/images/", handlers.handleGetImage)
+        e.POST("/signup/", handlers.handleSignUp)
+        e.POST("/signin/", handlers.handleSignIn)
+        e.POST("/signin/profile/", handlers.handleChangeProfile)
+        e.POST("/signin/profileImage/", handlers.handleChangeImage)
+
+        e.Logger.Fatal(e.Start(listenAddr))</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package main
+
+import (
+        "database/sql"
+)
+
+type User struct {
+        ID       int64
+        Username string
+        Password string
+        Avatar   string
+}
+
+type UsersRepository struct {
+        DB *sql.DB
+}
+
+func (repo *UsersRepository) ListAll() ([]*User, error) <span class="cov8" title="1">{
+        users := []*User{}
+        rows, err := repo.DB.Query("SELECT id, login, avatar FROM users")
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">defer rows.Close()
+        for rows.Next() </span><span class="cov8" title="1">{
+                record := &amp;User{}
+                err = rows.Scan(&amp;record.ID, &amp;record.Username, &amp;record.Avatar)
+                if err != nil </span><span class="cov8" title="1">{
+                        return nil, err
+                }</span>
+                <span class="cov8" title="1">users = append(users, record)</span>
+        }
+        <span class="cov8" title="1">return users, nil</span>
+}
+
+func (repo *UsersRepository) SelectByID(id int64) (*User, error) <span class="cov8" title="1">{
+        record := &amp;User{}
+        err := repo.DB.
+                QueryRow("SELECT id, login, password, avatar FROM users WHERE id = ?", id).
+                Scan(&amp;record.ID, &amp;record.Username, &amp;record.Password, &amp;record.Avatar)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">return record, nil</span>
+}
+
+// Потенциально очень не безопасный запрос
+func (repo *UsersRepository) SelectDataByLogin(username string) (*User, error) <span class="cov8" title="1">{
+        record := &amp;User{}
+        err := repo.DB.
+                QueryRow("SELECT id, login, password, avatar FROM users WHERE login = ?", username).
+                Scan(&amp;record.ID, &amp;record.Username, &amp;record.Password, &amp;record.Avatar)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">return record, nil</span>
+}
+
+func (repo *UsersRepository) SelectByLoginAndPassword(elem *User) (*User, error) <span class="cov8" title="1">{
+        record := &amp;User{}
+        err := repo.DB.
+                QueryRow("SELECT id, login, avatar FROM users WHERE login = ? AND password = ?",
+                        elem.Username, elem.Password).
+                Scan(&amp;record.ID, &amp;record.Username, &amp;record.Avatar)
+        if err != nil </span><span class="cov8" title="1">{
+                return record, err
+        }</span>
+        <span class="cov8" title="1">return record, nil</span>
+}
+
+func (repo *UsersRepository) Create(elem *User) (int64, error) <span class="cov8" title="1">{
+        defaultAvatar := "images/avatar.png"
+        result, err := repo.DB.Exec(
+                "INSERT INTO users (`login`, `password`, `avatar`) VALUES (?, ?, ?)",
+                elem.Username,
+                elem.Password,
+                defaultAvatar,
+        )
+        if err != nil </span><span class="cov8" title="1">{
+                return 0, err
+        }</span>
+        <span class="cov8" title="1">return result.LastInsertId()</span>
+}
+
+func (repo *UsersRepository) Update(elem *User) (int64, error) <span class="cov8" title="1">{
+        result, err := repo.DB.Exec(
+                "UPDATE users SET"+
+                        "`login` = ?"+
+                        ",`password` = ?"+
+                        ",`avatar` = ?"+
+                        "WHERE id = ?",
+                elem.Username,
+                elem.Password,
+                elem.Avatar,
+                elem.ID,
+        )
+        if err != nil </span><span class="cov8" title="1">{
+                return 0, err
+        }</span>
+        <span class="cov8" title="1">return result.RowsAffected()</span>
+}
+
+func (repo *UsersRepository) Delete(id int64) (int64, error) <span class="cov8" title="1">{
+        result, err := repo.DB.Exec(
+                "DELETE FROM users WHERE id = ?",
+                id,
+        )
+        if err != nil </span><span class="cov8" title="1">{
+                return 0, err
+        }</span>
+        <span class="cov8" title="1">return result.RowsAffected()</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

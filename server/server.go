@@ -13,7 +13,7 @@ const listenAddr = "127.0.0.1:8080"
 func main() {
 	e := echo.New()
 
-	dsn := "toringol:12345@tcp(localhost:3306)/users?"
+	dsn := "toringol:1234@tcp(localhost:3306)/users?"
 	dsn += "&charset=utf8"
 	dsn += "&interpolateParams=true"
 
