@@ -4,17 +4,20 @@ import (
 	"database/sql"
 )
 
+// User - data for user DataBase
 type User struct {
-	ID       int64
-	Username string
-	Password string
-	Avatar   string
+	ID       int64  `json:"id"`
+	Username string `json:"username"`
+	Password string `json:"-"`
+	Avatar   string `json:"image"`
 }
 
+// UsersRepository - uses pointer of any DataBase
 type UsersRepository struct {
 	DB *sql.DB
 }
 
+// ListAll - show all public information
 func (repo *UsersRepository) ListAll() ([]*User, error) {
 	users := []*User{}
 	rows, err := repo.DB.Query("SELECT id, login, avatar FROM users")
@@ -33,6 +36,7 @@ func (repo *UsersRepository) ListAll() ([]*User, error) {
 	return users, nil
 }
 
+// SelectByID - select all user`s data by ID
 func (repo *UsersRepository) SelectByID(id int64) (*User, error) {
 	record := &User{}
 	err := repo.DB.
@@ -44,7 +48,7 @@ func (repo *UsersRepository) SelectByID(id int64) (*User, error) {
 	return record, nil
 }
 
-// Потенциально очень не безопасный запрос
+// SelectDataByLogin - select all user`s data by Login
 func (repo *UsersRepository) SelectDataByLogin(username string) (*User, error) {
 	record := &User{}
 	err := repo.DB.
@@ -56,18 +60,7 @@ func (repo *UsersRepository) SelectDataByLogin(username string) (*User, error) {
 	return record, nil
 }
 
-func (repo *UsersRepository) SelectByLoginAndPassword(elem *User) (*User, error) {
-	record := &User{}
-	err := repo.DB.
-		QueryRow("SELECT id, login, avatar FROM users WHERE login = ? AND password = ?",
-			elem.Username, elem.Password).
-		Scan(&record.ID, &record.Username, &record.Avatar)
-	if err != nil {
-		return record, err
-	}
-	return record, nil
-}
-
+// Create - create new user in dataBase with default avatar
 func (repo *UsersRepository) Create(elem *User) (int64, error) {
 	defaultAvatar := "images/avatar.png"
 	result, err := repo.DB.Exec(
@@ -82,6 +75,7 @@ func (repo *UsersRepository) Create(elem *User) (int64, error) {
 	return result.LastInsertId()
 }
 
+// Update - update user`s data in DataBase
 func (repo *UsersRepository) Update(elem *User) (int64, error) {
 	result, err := repo.DB.Exec(
 		"UPDATE users SET"+
@@ -100,6 +94,7 @@ func (repo *UsersRepository) Update(elem *User) (int64, error) {
 	return result.RowsAffected()
 }
 
+// Delete - delete user`s record in DataBase
 func (repo *UsersRepository) Delete(id int64) (int64, error) {
 	result, err := repo.DB.Exec(
 		"DELETE FROM users WHERE id = ?",

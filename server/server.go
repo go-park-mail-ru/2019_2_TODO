@@ -2,18 +2,17 @@ package main
 
 import (
 	"database/sql"
-	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
 	"log"
 	"net/http"
-)
 
-const listenAddr = "127.0.0.1:8080"
+	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
+)
 
 func main() {
 	e := echo.New()
 
-	dsn := "toringol:1234@tcp(localhost:3306)/users?"
+	dsn := dataBaseConfig
 	dsn += "&charset=utf8"
 	dsn += "&interpolateParams=true"
 
@@ -39,7 +38,7 @@ func main() {
 	}))
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins:     []string{frontIp},
+		AllowOrigins:     []string{frontIP},
 		AllowMethods:     []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
 		AllowCredentials: true,
 	}))
@@ -50,6 +49,7 @@ func main() {
 	e.GET("/signin/profile/", handlers.handleGetProfile)
 	e.GET("/logout/", handlers.handleLogout)
 	e.GET("/images/", handlers.handleGetImage)
+
 	e.POST("/signup/", handlers.handleSignUp)
 	e.POST("/signin/", handlers.handleSignIn)
 	e.POST("/signin/profile/", handlers.handleChangeProfile)

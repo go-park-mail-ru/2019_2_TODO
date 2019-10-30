@@ -4,11 +4,12 @@ go 1.12
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.3.3
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/gorilla/securecookie v1.1.1
 	github.com/labstack/echo v3.3.10+incompatible
 	github.com/labstack/gommon v0.3.0 // indirect
+	github.com/microcosm-cc/bluemonday v1.0.2
 	github.com/pkg/errors v0.8.1
-	golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550 // indirect
+	golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550
 )

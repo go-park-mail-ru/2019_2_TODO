@@ -1,38 +1,28 @@
 package main
 
 import (
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/gorilla/securecookie"
-	"github.com/labstack/echo"
+	"encoding/base64"
 	"io"
 	"log"
 	"net/http"
 	"os"
-	"sort"
-	"time"
+
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/labstack/echo"
+	"github.com/microcosm-cc/bluemonday"
 )
 
-const (
-	frontIp      = "http://93.171.139.195:780"
-	backIp       = "http://93.171.139.196:780"
-	pathToImages = `/root/golang/test/2019_2_TODO/server/`
-)
-
-var cookieHandler = securecookie.New(
-	securecookie.GenerateRandomKey(64),
-	securecookie.GenerateRandomKey(32),
-)
-
+// UserCRUD - User DataBase interface
 type UserCRUD interface {
 	ListAll() ([]*User, error)
 	SelectByID(int64) (*User, error)
 	SelectDataByLogin(string) (*User, error)
-	SelectByLoginAndPassword(*User) (*User, error)
 	Create(*User) (int64, error)
 	Update(*User) (int64, error)
 	Delete(int64) (int64, error)
 }
 
+// Handlers - use UserCRUD
 type Handlers struct {
 	Users UserCRUD
 }
@@ -44,6 +34,12 @@ func (h *Handlers) handleSignUp(ctx echo.Context) error {
 	if err := ctx.Bind(newUserInput); err != nil {
 		return ctx.JSON(http.StatusBadRequest, "")
 	}
+
+	sanitizer := bluemonday.UGCPolicy()
+	newUserInput.Username = sanitizer.Sanitize(newUserInput.Username)
+
+	newUserInput.Password = base64.StdEncoding.EncodeToString(
+		convertPass(newUserInput.Password))
 
 	lastID, err := h.Users.Create(newUserInput)
 	if err != nil {
@@ -68,10 +64,19 @@ func (h *Handlers) handleSignIn(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, "")
 	}
 
-	userRecord, err := h.Users.SelectByLoginAndPassword(authCredentials)
+	sanitizer := bluemonday.UGCPolicy()
+	authCredentials.Username = sanitizer.Sanitize(authCredentials.Username)
+
+	userRecord, err := h.Users.SelectDataByLogin(authCredentials.Username)
 
 	if err != nil {
-		return ctx.JSON(http.StatusUnauthorized, "")
+		return ctx.JSON(http.StatusUnauthorized, "No such user!")
+	}
+
+	passToCheck, err := base64.StdEncoding.DecodeString(userRecord.Password)
+
+	if err != nil || !checkPass(passToCheck, authCredentials.Password) {
+		return ctx.JSON(http.StatusUnauthorized, "Incorrect password!")
 	}
 
 	log.Println("UserData: ID - ", userRecord.ID, " Login - ", userRecord.Username,
@@ -83,16 +88,15 @@ func (h *Handlers) handleSignIn(ctx echo.Context) error {
 }
 
 func (h *Handlers) handleSignInGet(ctx echo.Context) error {
-	cookieUsername := h.ReadCookieUsername(ctx)
+	cookieUsername := ReadCookieUsername(ctx)
 	cookieAvatar := h.ReadCookieAvatar(ctx)
 
-	log.Println(cookieUsername)
-	log.Println(cookieAvatar)
+	log.Println(cookieUsername + " " + cookieAvatar)
 
 	if cookieUsername != "" {
-		cookieUsernameInput := CredentialsInput{
+		cookieUsernameInput := User{
 			Username: cookieUsername,
-			Image:    backIp + cookieAvatar,
+			Avatar:   backIP + cookieAvatar,
 		}
 
 		return ctx.JSON(http.StatusCreated, cookieUsernameInput)
@@ -113,9 +117,10 @@ func (h *Handlers) handleChangeProfile(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, "")
 	}
 
-	oldUsername := h.ReadCookieUsername(ctx)
+	oldUsername := ReadCookieUsername(ctx)
 
 	oldData, err := h.Users.SelectDataByLogin(oldUsername)
+
 	if err != nil {
 		log.Println("Users.Update error: ", err)
 		return ctx.JSON(http.StatusInternalServerError, "")
@@ -126,8 +131,12 @@ func (h *Handlers) handleChangeProfile(ctx echo.Context) error {
 	if changeProfileCredentials.Username == "" {
 		changeProfileCredentials.Username = oldData.Username
 	}
+
 	if changeProfileCredentials.Password == "" {
 		changeProfileCredentials.Password = oldData.Password
+	} else {
+		changeProfileCredentials.Password = base64.StdEncoding.EncodeToString(
+			convertPass(changeProfileCredentials.Password))
 	}
 
 	affected, err := h.Users.Update(changeProfileCredentials)
@@ -145,7 +154,7 @@ func (h *Handlers) handleChangeProfile(ctx echo.Context) error {
 
 func (h *Handlers) handleChangeImage(ctx echo.Context) error {
 
-	username := h.ReadCookieUsername(ctx)
+	username := ReadCookieUsername(ctx)
 
 	err := loadAvatar(ctx, username)
 	if err != nil {
@@ -163,6 +172,8 @@ func (h *Handlers) handleChangeImage(ctx echo.Context) error {
 	}
 
 	changeData.ID = oldData.ID
+	changeData.Username = oldData.Username
+	changeData.Password = oldData.Password
 
 	affected, err := h.Users.Update(changeData)
 	if err != nil {
@@ -207,9 +218,9 @@ func loadAvatar(ctx echo.Context, username string) error {
 
 func (h *Handlers) handleGetProfile(ctx echo.Context) error {
 
-	cookiesData := CredentialsInput{
-		Username: h.ReadCookieUsername(ctx),
-		Image:    h.ReadCookieAvatar(ctx),
+	cookiesData := User{
+		Username: ReadCookieUsername(ctx),
+		Avatar:   h.ReadCookieAvatar(ctx),
 	}
 
 	return ctx.JSON(http.StatusOK, cookiesData)
@@ -231,7 +242,7 @@ func (h *Handlers) handleLogout(ctx echo.Context) error {
 }
 
 func (h *Handlers) checkUsersForTesting(ctx echo.Context) error {
-	if h.ReadCookieUsername(ctx) != "" {
+	if ReadCookieUsername(ctx) != "" {
 		log.Println("Success checking cook")
 	}
 
@@ -246,127 +257,4 @@ func (h *Handlers) checkUsersForTesting(ctx echo.Context) error {
 	log.Println(users)
 
 	return ctx.JSON(http.StatusOK, "")
-}
-
-// func (h *Handlers) checkUsername(accounts []Credentials, authCredentials *CredentialsInput) error {
-// 	if len(accounts) == 0 {
-// 		return errors.New("No users")
-// 	}
-
-// 	sort.Slice(accounts[:], func(i, j int) bool {
-// 		return accounts[i].Username < accounts[j].Username
-// 	})
-
-// 	iter := sort.Search(len(accounts), func(i int) bool {
-// 		return accounts[i].Username == authCredentials.Username
-// 	})
-
-// 	if iter < len(accounts) && accounts[iter].Username == authCredentials.Username {
-// 		return nil
-// 	} else {
-// 		return errors.New("No such user")
-// 	}
-// }
-
-// func (h *Handlers) checkPassword(accounts []Credentials, authCredentials *CredentialsInput) error {
-
-// 	if len(accounts) == 0 {
-// 		return errors.New("No users")
-// 	}
-
-// 	sort.Slice(accounts[:], func(i, j int) bool {
-// 		return accounts[i].Password < accounts[j].Password
-// 	})
-
-// 	iter := sort.Search(len(accounts), func(i int) bool {
-// 		return accounts[i].Password == authCredentials.Password
-// 	})
-
-// 	if iter < len(accounts) && accounts[iter].Password == authCredentials.Password {
-// 		return nil
-// 	} else {
-// 		return errors.New("Wrong password")
-// 	}
-// }
-
-// func (h *Handlers) changeProfile(accounts []Credentials, changeProfileCredentials *CredentialsInput, oldUsername string) {
-// 	sort.Slice(accounts[:], func(i, j int) bool {
-// 		return accounts[i].Username < accounts[j].Username
-// 	})
-
-// 	iter := sort.Search(len(accounts), func(i int) bool {
-// 		return accounts[i].Username == oldUsername
-// 	})
-
-// 	if changeProfileCredentials.Username != "" {
-// 		accounts[iter].Username = changeProfileCredentials.Username
-// 	}
-// 	if changeProfileCredentials.Password != "" {
-// 		accounts[iter].Password = changeProfileCredentials.Password
-// 	}
-// 	if changeProfileCredentials.Image != "" {
-// 		accounts[iter].Image = changeProfileCredentials.Image
-// 	}
-// }
-
-func SetCookie(ctx echo.Context, userName string) {
-	value := map[string]string{
-		"username": userName,
-	}
-
-	if encoded, err := cookieHandler.Encode("session_token", value); err == nil {
-		expiration := time.Now().Add(24 * time.Hour)
-		cookie := http.Cookie{
-			Name:    "session_token",
-			Value:   encoded,
-			Path:    "/",
-			Expires: expiration,
-		}
-
-		http.SetCookie(ctx.Response(), &cookie)
-	}
-}
-
-func ClearCookie(ctx echo.Context) {
-	cookie := http.Cookie{
-		Name:    "session_token",
-		Value:   "",
-		Path:    "/",
-		Expires: time.Unix(0, 0),
-	}
-	http.SetCookie(ctx.Response(), &cookie)
-}
-
-func (h *Handlers) ReadCookieUsername(ctx echo.Context) string {
-	if cookie, err := ctx.Request().Cookie("session_token"); err == nil {
-		value := make(map[string]string)
-		if err = cookieHandler.Decode("session_token", cookie.Value, &value); err == nil {
-			return value["username"]
-		}
-	}
-	return ""
-}
-
-func (h *Handlers) ReadCookieAvatar(ctx echo.Context) string {
-	if cookie, err := ctx.Request().Cookie("session_token"); err == nil {
-		value := make(map[string]string)
-		if err = cookieHandler.Decode("session_token", cookie.Value, &value); err == nil {
-			accounts, err := h.Users.ListAll()
-			if err != nil {
-				return ""
-			}
-			sort.Slice(accounts[:], func(i, j int) bool {
-				return accounts[i].Username < accounts[j].Username
-			})
-
-			iter := sort.Search(len(accounts), func(i int) bool {
-				return accounts[i].Username == value["username"]
-			})
-			if iter >= len(accounts) {
-				return "images/avatar.png"
-			}
-			return accounts[iter].Avatar
-		}
-	}
-	return ""
 }
