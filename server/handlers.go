@@ -49,7 +49,9 @@ func (h *Handlers) handleSignUp(ctx echo.Context) error {
 
 	log.Println("Last id: ", lastID)
 
-	SetCookie(ctx, newUserInput.Username)
+	if err = SetCookie(ctx, *newUserInput); err != nil {
+		ctx.JSON(http.StatusInternalServerError, "Cookie set error")
+	}
 
 	log.Println(newUserInput.Username)
 
@@ -82,14 +84,16 @@ func (h *Handlers) handleSignIn(ctx echo.Context) error {
 	log.Println("UserData: ID - ", userRecord.ID, " Login - ", userRecord.Username,
 		" Avatar - ", userRecord.Avatar)
 
-	SetCookie(ctx, authCredentials.Username)
+	if err = SetCookie(ctx, *authCredentials); err != nil {
+		ctx.JSON(http.StatusInternalServerError, "Cookie set error")
+	}
 
 	return ctx.JSON(http.StatusOK, "")
 }
 
 func (h *Handlers) handleSignInGet(ctx echo.Context) error {
 	cookieUsername := ReadCookieUsername(ctx)
-	cookieAvatar := h.ReadCookieAvatar(ctx)
+	cookieAvatar := ReadCookieAvatar(ctx)
 
 	log.Println(cookieUsername + " " + cookieAvatar)
 
@@ -146,8 +150,13 @@ func (h *Handlers) handleChangeProfile(ctx echo.Context) error {
 	}
 	log.Println("Update affectedRows: ", affected)
 
-	ClearCookie(ctx)
-	SetCookie(ctx, changeProfileCredentials.Username)
+	if err = ClearCookie(ctx); err != nil {
+		ctx.JSON(http.StatusInternalServerError, "Cookie clear error")
+	}
+
+	if err = SetCookie(ctx, *changeProfileCredentials); err != nil {
+		ctx.JSON(http.StatusInternalServerError, "Cookie set error")
+	}
 
 	return ctx.JSON(http.StatusOK, "")
 }
@@ -220,14 +229,14 @@ func (h *Handlers) handleGetProfile(ctx echo.Context) error {
 
 	cookiesData := User{
 		Username: ReadCookieUsername(ctx),
-		Avatar:   h.ReadCookieAvatar(ctx),
+		Avatar:   ReadCookieAvatar(ctx),
 	}
 
 	return ctx.JSON(http.StatusOK, cookiesData)
 }
 
 func (h *Handlers) handleGetImage(ctx echo.Context) error {
-	avatar := h.ReadCookieAvatar(ctx)
+	avatar := ReadCookieAvatar(ctx)
 
 	log.Println(avatar)
 

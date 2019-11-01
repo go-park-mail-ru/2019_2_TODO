@@ -1,71 +1,77 @@
 package main
 
 import (
-	"net/http"
-	"time"
-
 	"github.com/gorilla/securecookie"
+	"github.com/gorilla/sessions"
 	"github.com/labstack/echo"
 )
 
-var cookieHandler = securecookie.New(
+// SessionsStore - hold all cookies
+var SessionsStore = sessions.NewCookieStore(
 	securecookie.GenerateRandomKey(64),
 	securecookie.GenerateRandomKey(32),
 )
 
-// SetCookie - set cookie with gluing together secret word and username login with ecryption
-func SetCookie(ctx echo.Context, userName string) {
-	value := map[string]string{
-		"username": userName,
+// SetCookie - set cookie with necessary data
+func SetCookie(ctx echo.Context, userInfo User) error {
+	session, err := SessionsStore.Get(ctx.Request(), "session_token")
+	if err != nil {
+		return err
 	}
 
-	if encoded, err := cookieHandler.Encode(sessionSecret, value); err == nil {
-		expiration := time.Now().Add(24 * time.Hour)
-		cookie := http.Cookie{
-			Name:    "session_token",
-			Value:   encoded,
-			Path:    "/",
-			Expires: expiration,
-		}
+	session.Values["id"] = userInfo.ID
+	session.Values["username"] = userInfo.Username
+	session.Values["avatar"] = userInfo.Avatar
 
-		http.SetCookie(ctx.Response(), &cookie)
+	err = session.Save(ctx.Request(), ctx.Response())
+	if err != nil {
+		return err
 	}
+	return nil
 }
 
 // ClearCookie - delete cookie by set time in past date
-func ClearCookie(ctx echo.Context) {
-	cookie := http.Cookie{
-		Name:    "session_token",
-		Value:   "",
-		Path:    "/",
-		Expires: time.Unix(0, 0),
+func ClearCookie(ctx echo.Context) error {
+	session, err := SessionsStore.Get(ctx.Request(), "session_token")
+	if err != nil {
+		return err
 	}
-	http.SetCookie(ctx.Response(), &cookie)
+
+	session.Values["ID"] = nil
+	session.Values["username"] = ""
+	session.Values["avatar"] = ""
+	session.Options.MaxAge = -1
+
+	err = session.Save(ctx.Request(), ctx.Response())
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-// ReadCookieUsername - return login by decoding cookie with secret word or empty string if not exist
+// ReadCookieID - return ID from cookie
+func ReadCookieID(ctx echo.Context) int64 {
+	session, err := SessionsStore.Get(ctx.Request(), "session_token")
+	if err != nil {
+		return -1
+	}
+	return session.Values["ID"].(int64)
+}
+
+// ReadCookieUsername - return username from cookie
 func ReadCookieUsername(ctx echo.Context) string {
-	if cookie, err := ctx.Request().Cookie(sessionSecret); err == nil {
-		value := make(map[string]string)
-		if err = cookieHandler.Decode(sessionSecret, cookie.Value, &value); err == nil {
-			return value["username"]
-		}
+	session, err := SessionsStore.Get(ctx.Request(), "session_token")
+	if err != nil {
+		return ""
 	}
-	return ""
+	return session.Values["username"].(string)
 }
 
-// ReadCookieAvatar - return avatar by decoding cookie with secret word and pulling it from DataBase or return empty string
-func (h *Handlers) ReadCookieAvatar(ctx echo.Context) string {
-	if cookie, err := ctx.Request().Cookie(sessionSecret); err == nil {
-		value := make(map[string]string)
-		if err = cookieHandler.Decode(sessionSecret, cookie.Value, &value); err == nil {
-			userRecord, err := h.Users.SelectDataByLogin(value["username"])
-			if err != nil {
-				return ""
-			}
-
-			return userRecord.Avatar
-		}
+// ReadCookieAvatar - return avatar from cookie
+func ReadCookieAvatar(ctx echo.Context) string {
+	session, err := SessionsStore.Get(ctx.Request(), "session_token")
+	if err != nil {
+		return ""
 	}
-	return ""
+	return session.Values["avatar"].(string)
 }
