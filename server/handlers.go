@@ -41,6 +41,8 @@ func (h *Handlers) handleSignUp(ctx echo.Context) error {
 	newUserInput.Password = base64.StdEncoding.EncodeToString(
 		convertPass(newUserInput.Password))
 
+	log.Println(newUserInput.Password)
+
 	lastID, err := h.Users.Create(newUserInput)
 	if err != nil {
 		log.Println("Items.Create err:", err)

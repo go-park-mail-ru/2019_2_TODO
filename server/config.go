@@ -6,5 +6,4 @@ const (
 	listenAddr     = "127.0.0.1:8080"
 	dataBaseConfig = "toringol:1234@tcp(localhost:3306)/users?"
 	pathToImages   = `/root/golang/test/2019_2_TODO/server/`
-	sessionSecret  = "session_token"
 )
