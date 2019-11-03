@@ -1,403 +1,267 @@
 package main
 
 import (
-	"encoding/json"
-	"errors"
-	"github.com/gorilla/securecookie"
+	"encoding/base64"
 	"io"
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
-	"sort"
-	"sync"
-	"time"
+
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/labstack/echo"
+	"github.com/microcosm-cc/bluemonday"
 )
 
-const clientIp = "http://93.171.139.195:780"
-
-var cookieHandler = securecookie.New(
-	securecookie.GenerateRandomKey(64),
-	securecookie.GenerateRandomKey(32),
-)
-
-type CredentialsInput struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-	Image    string `json:"image"`
+// UserCRUD - User DataBase interface
+type UserCRUD interface {
+	ListAll() ([]*User, error)
+	SelectByID(int64) (*User, error)
+	SelectDataByLogin(string) (*User, error)
+	Create(*User) (int64, error)
+	Update(*User) (int64, error)
+	Delete(int64) (int64, error)
 }
 
-type Credentials struct {
-	ID       uint64 `json:"id"`
-	Username string `json:"username"`
-	Password string `json:"-"`
-	Image    string `json:"image"`
-}
-
+// Handlers - use UserCRUD
 type Handlers struct {
-	users []Credentials
-	mu    *sync.Mutex
+	Users UserCRUD
 }
 
-func (h *Handlers) handleSignUp(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
+func (h *Handlers) handleSignUp(ctx echo.Context) error {
+	newUserInput := new(User)
 
-	w.Header().Set("Access-Control-Allow-Origin", clientIp)
-	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	w.Header().Set("Access-Control-Allow-Credentials", "true")
-
-	if r.Method == "OPTIONS" {
-		return
+	if err := ctx.Bind(newUserInput); err != nil {
+		log.Println(ctx.Request().Header.Get("Content-Type"))
+		log.Println(err)
+		log.Println(newUserInput)
+		log.Println(ctx.Request().Body)
+		return ctx.JSON(http.StatusBadRequest, "")
 	}
 
-	decoder := json.NewDecoder(r.Body)
-	newUserInput := new(CredentialsInput)
+	sanitizer := bluemonday.UGCPolicy()
+	newUserInput.Username = sanitizer.Sanitize(newUserInput.Username)
 
-	err := decoder.Decode(newUserInput)
+	newUserInput.Password = base64.StdEncoding.EncodeToString(
+		convertPass(newUserInput.Password))
+
+	newUserInput.Avatar = "/images/avatar.png"
+
+	log.Println(newUserInput.Password)
+
+	lastID, err := h.Users.Create(newUserInput)
 	if err != nil {
-		log.Printf("Error while decoding body: %s", err)
-		w.Write([]byte("{}"))
-		return
+		log.Println("Items.Create err:", err)
+		return ctx.JSON(http.StatusInternalServerError, "")
 	}
 
-	h.mu.Lock()
+	log.Println("Last id: ", lastID)
 
-	var idUser uint64 = 0
-	var defaultImage = "images/avatar.png"
-
-	if len(h.users) > 0 {
-		idUser = h.users[len(h.users)-1].ID + 1
+	if err = SetCookie(ctx, *newUserInput); err != nil {
+		ctx.JSON(http.StatusInternalServerError, "Cookie set error")
 	}
-
-	h.users = append(h.users, Credentials{
-		ID:       idUser,
-		Username: newUserInput.Username,
-		Password: newUserInput.Password,
-		Image:    defaultImage,
-	})
-	h.mu.Unlock()
 
 	log.Println(newUserInput.Username)
 
+	return nil
 }
 
-func (h *Handlers) handleSignIn(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
+func (h *Handlers) handleSignIn(ctx echo.Context) error {
 
-	w.Header().Set("Access-Control-Allow-Origin", clientIp)
-	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	w.Header().Set("Access-Control-Allow-Credentials", "true")
+	authCredentials := new(User)
 
-	if r.Method == "OPTIONS" {
-		return
+	if err := ctx.Bind(authCredentials); err != nil {
+		return ctx.JSON(http.StatusBadRequest, "")
 	}
 
-	decoder := json.NewDecoder(r.Body)
-	authCredentials := new(CredentialsInput)
+	sanitizer := bluemonday.UGCPolicy()
+	authCredentials.Username = sanitizer.Sanitize(authCredentials.Username)
 
-	err := decoder.Decode(authCredentials)
-	if err != nil {
-		log.Printf("Error while decoding body: %s", err)
-		w.Write([]byte("{}"))
-		return
-	}
-
-	h.mu.Lock()
-
-	accounts := h.users
-
-	err = h.checkUsername(accounts, authCredentials)
+	userRecord, err := h.Users.SelectDataByLogin(authCredentials.Username)
 
 	if err != nil {
-		log.Printf("%s", err)
-		w.Write([]byte("{}"))
-		return
+		return ctx.JSON(http.StatusUnauthorized, "No such user!")
 	}
 
-	err = h.checkPassword(accounts, authCredentials)
+	passToCheck, err := base64.StdEncoding.DecodeString(userRecord.Password)
 
-	if err != nil {
-		log.Printf("%s", err)
-		w.Write([]byte("{}"))
-		return
+	if err != nil || !checkPass(passToCheck, authCredentials.Password) {
+		return ctx.JSON(http.StatusUnauthorized, "Incorrect password!")
 	}
 
-	SetCookie(w, authCredentials.Username)
+	log.Println("UserData: ID - ", userRecord.ID, " Login - ", userRecord.Username,
+		" Avatar - ", userRecord.Avatar)
 
-	h.mu.Unlock()
+	if err = SetCookie(ctx, *userRecord); err != nil {
+		ctx.JSON(http.StatusInternalServerError, "Cookie set error")
+	}
 
+	return nil
 }
 
-func (h *Handlers) handleSignInGet(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", clientIp)
-	w.Header().Set("Access-Control-Allow-Methods", "GET")
-	w.Header().Set("Access-Control-Allow-Credentials", "true")
+func (h *Handlers) handleSignInGet(ctx echo.Context) error {
+	cookieUsername := ReadCookieUsername(ctx)
+	cookieAvatar := ReadCookieAvatar(ctx)
 
-	cookieUsername := h.ReadCookieUsername(w, r)
-
-	log.Println(cookieUsername)
+	log.Println(cookieUsername + " " + cookieAvatar)
 
 	if cookieUsername != "" {
-		cookieUsernameInput := CredentialsInput{
+		cookieUsernameInput := User{
 			Username: cookieUsername,
+			Avatar:   backIP + cookieAvatar,
 		}
-
-		encoder := json.NewEncoder(w)
-		err := encoder.Encode(cookieUsernameInput)
-		if err != nil {
-			log.Println("Error while encoding")
-			w.Write([]byte("{}"))
-			return
-		}
+		return ctx.JSON(http.StatusCreated, cookieUsernameInput)
 	}
+
+	return nil
 }
 
-func (h *Handlers) handleChangeProfile(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
+func (h *Handlers) handleOk(ctx echo.Context) error {
+	return nil
+}
 
-	w.Header().Set("Access-Control-Allow-Origin", clientIp)
-	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	w.Header().Set("Access-Control-Allow-Credentials", "true")
+func (h *Handlers) handleChangeProfile(ctx echo.Context) error {
 
-	if r.Method == "OPTIONS" {
-		return
+	changeProfileCredentials := new(User)
+
+	if err := ctx.Bind(changeProfileCredentials); err != nil {
+		return ctx.JSON(http.StatusBadRequest, "")
 	}
 
-	decoder := json.NewDecoder(r.Body)
-	changeProfileCredentials := new(CredentialsInput)
+	oldUsername := ReadCookieUsername(ctx)
 
-	err := decoder.Decode(changeProfileCredentials)
+	oldData, err := h.Users.SelectDataByLogin(oldUsername)
+
 	if err != nil {
-		log.Printf("Error while decoding body: %s", err)
-		w.Write([]byte("{}"))
-		return
+		log.Println("Users.Update error: ", err)
+		return ctx.JSON(http.StatusInternalServerError, "")
 	}
 
-	h.mu.Lock()
-
-	oldUsername := h.ReadCookieUsername(w, r)
-
-	h.changeProfile(h.users, changeProfileCredentials, oldUsername)
-
-	ClearCookie(w)
-	SetCookie(w, changeProfileCredentials.Username)
-
-	h.mu.Unlock()
-
-}
-
-func (h *Handlers) handleChangeImage(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-
-	w.Header().Set("Access-Control-Allow-Origin", clientIp)
-	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	w.Header().Set("Access-Control-Allow-Credentials", "true")
-
-	if r.Method == "OPTIONS" {
-		return
+	changeProfileCredentials.ID = oldData.ID
+	changeProfileCredentials.Avatar = oldData.Avatar
+	if changeProfileCredentials.Username == "" {
+		changeProfileCredentials.Username = oldData.Username
 	}
 
-	username := h.ReadCookieUsername(w, r)
+	if changeProfileCredentials.Password == "" {
+		changeProfileCredentials.Password = oldData.Password
+	} else {
+		changeProfileCredentials.Password = base64.StdEncoding.EncodeToString(
+			convertPass(changeProfileCredentials.Password))
+	}
 
-	loadAvatar(w, r, username)
-
-	changeData := new(CredentialsInput)
-
-	changeData.Image = "images/" + username + ".jpg"
-
-	oldUsername := h.ReadCookieUsername(w, r)
-
-	h.changeProfile(h.users, changeData, oldUsername)
-}
-
-func loadAvatar(w http.ResponseWriter, r *http.Request, username string) {
-	src, hdr, err := r.FormFile("image")
+	affected, err := h.Users.Update(changeProfileCredentials)
 	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
+		log.Println("Users.Update error: ", err)
+		return ctx.JSON(http.StatusInternalServerError, "")
+	}
+	log.Println("Update affectedRows: ", affected)
+
+	if err = SetCookie(ctx, *changeProfileCredentials); err != nil {
+		ctx.JSON(http.StatusInternalServerError, "Cookie set error")
+	}
+
+	return nil
+}
+
+func (h *Handlers) handleChangeImage(ctx echo.Context) error {
+
+	username := ReadCookieUsername(ctx)
+
+	fileName, err := loadAvatar(ctx, username)
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, "")
+	}
+
+	changeData := new(User)
+
+	changeData.Avatar = "/images/" + fileName
+
+	oldData, err := h.Users.SelectDataByLogin(username)
+	if err != nil {
+		log.Println("Users.Update error: ", err)
+		return ctx.JSON(http.StatusInternalServerError, "")
+	}
+
+	changeData.ID = oldData.ID
+	changeData.Username = oldData.Username
+	changeData.Password = oldData.Password
+
+	affected, err := h.Users.Update(changeData)
+	if err != nil {
+		log.Println("Users.Update error: ", err)
+		return ctx.JSON(http.StatusInternalServerError, "")
+	}
+	log.Println("Update affectedRows: ", affected)
+
+	if err = SetCookie(ctx, *changeData); err != nil {
+		ctx.JSON(http.StatusInternalServerError, "Cookie set error")
+	}
+
+	return nil
+}
+
+func loadAvatar(ctx echo.Context, username string) (string, error) {
+	file, err := ctx.FormFile("image")
+	if err != nil {
+		log.Println("Error formFile")
+		return "", err
+	}
+
+	src, err := file.Open()
+	if err != nil {
+		log.Println("Error file while opening")
+		return "", err
 	}
 	defer src.Close()
 
-	dst, err := os.Create(filepath.Join("/root/golang/2019_2_TODO/server/images/", hdr.Filename))
-	os.Rename(filepath.Join("/root/golang/2019_2_TODO/server/images/", hdr.Filename),
-		filepath.Join("/root/golang/2019_2_TODO/server/images/", username+".jpg"))
+	dst, err := os.Create(pathToImages + `images/` + file.Filename)
 	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
+		log.Println("Error creating file")
+		return "", err
 	}
 	defer dst.Close()
 
-	io.Copy(dst, src)
-}
-
-func (h *Handlers) handleGetProfile(w http.ResponseWriter, r *http.Request) {
-
-	w.Header().Set("Access-Control-Allow-Origin", clientIp)
-	w.Header().Set("Access-Control-Allow-Methods", "GET")
-	w.Header().Set("Access-Control-Allow-Credentials", "true")
-
-	encoder := json.NewEncoder(w)
-
-	h.mu.Lock()
-
-	cookiesData := CredentialsInput{
-		Username: h.ReadCookieUsername(w, r),
-		Image:    h.ReadCookieAvatar(w, r),
+	if _, err = io.Copy(dst, src); err != nil {
+		log.Println("Error copy file")
+		return "", err
 	}
 
-	err := encoder.Encode(cookiesData)
+	return file.Filename, nil
+}
 
-	h.mu.Unlock()
+func (h *Handlers) handleGetProfile(ctx echo.Context) error {
 
-	if err != nil {
-		log.Printf("Error while encoding json: %s", err)
-		w.Write([]byte("{}"))
+	cookiesData := User{
+		Username: ReadCookieUsername(ctx),
+		Avatar:   ReadCookieAvatar(ctx),
 	}
+
+	if cookiesData.Username == "" {
+		return nil
+	}
+
+	return ctx.JSON(http.StatusOK, cookiesData)
 }
 
-func (h *Handlers) handleLogout(w http.ResponseWriter, r *http.Request) {
-	ClearCookie(w)
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+func (h *Handlers) handleLogout(ctx echo.Context) error {
+	ClearCookie(ctx)
+	return ctx.JSON(http.StatusOK, "")
 }
 
-func (h *Handlers) checkUsersForTesting(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", clientIp)
-	w.Header().Set("Access-Control-Allow-Methods", "GET")
-	w.Header().Set("Access-Control-Allow-Credentials", "true")
-
-	if h.ReadCookieUsername(w, r) != "" {
+func (h *Handlers) checkUsersForTesting(ctx echo.Context) error {
+	if ReadCookieUsername(ctx) != "" {
 		log.Println("Success checking cook")
 	}
 
-	encoder := json.NewEncoder(w)
-	h.mu.Lock()
-	err := encoder.Encode(h.users)
-	h.mu.Unlock()
+	users, err := h.Users.ListAll()
 	if err != nil {
-		log.Printf("error while marshalling JSON: %s", err)
-		w.Write([]byte("{}"))
-		return
-	}
-	log.Println(h.users)
-}
-
-func (h *Handlers) checkUsername(accounts []Credentials, authCredentials *CredentialsInput) error {
-	if len(accounts) == 0 {
-		return errors.New("No users")
+		log.Println("Error while getting all users: ", err)
+		return ctx.JSON(http.StatusInternalServerError, "")
 	}
 
-	sort.Slice(accounts[:], func(i, j int) bool {
-		return accounts[i].Username < accounts[j].Username
-	})
+	ctx.JSON(http.StatusOK, users)
 
-	iter := sort.Search(len(accounts), func(i int) bool {
-		return accounts[i].Username == authCredentials.Username
-	})
+	log.Println(users)
 
-	if iter < len(accounts) && accounts[iter].Username == authCredentials.Username {
-		return nil
-	} else {
-		return errors.New("No such user")
-	}
-}
-
-func (h *Handlers) checkPassword(accounts []Credentials, authCredentials *CredentialsInput) error {
-
-	if len(accounts) == 0 {
-		return errors.New("No users")
-	}
-
-	sort.Slice(accounts[:], func(i, j int) bool {
-		return accounts[i].Password < accounts[j].Password
-	})
-
-	iter := sort.Search(len(accounts), func(i int) bool {
-		return accounts[i].Password == authCredentials.Password
-	})
-
-	if iter < len(accounts) && accounts[iter].Password == authCredentials.Password {
-		return nil
-	} else {
-		return errors.New("Wrong password")
-	}
-}
-
-func (h *Handlers) changeProfile(accounts []Credentials, changeProfileCredentials *CredentialsInput, oldUsername string) {
-	sort.Slice(accounts[:], func(i, j int) bool {
-		return accounts[i].Username < accounts[j].Username
-	})
-
-	iter := sort.Search(len(accounts), func(i int) bool {
-		return accounts[i].Username == changeProfileCredentials.Username
-	})
-
-	if changeProfileCredentials.Username != "" {
-		accounts[iter].Username = changeProfileCredentials.Username
-	}
-	if changeProfileCredentials.Password != "" {
-		accounts[iter].Password = changeProfileCredentials.Password
-	}
-	if changeProfileCredentials.Image != "" {
-		accounts[iter].Image = changeProfileCredentials.Image
-	}
-}
-
-func SetCookie(w http.ResponseWriter, userName string) {
-	value := map[string]string{
-		"username": userName,
-	}
-
-	if encoded, err := cookieHandler.Encode("session_token", value); err == nil {
-		expiration := time.Now().Add(24 * time.Hour)
-		cookie := http.Cookie{
-			Name:    "session_token",
-			Value:   encoded,
-			Path:    "/",
-			Expires: expiration,
-		}
-
-		http.SetCookie(w, &cookie)
-	}
-}
-
-func ClearCookie(w http.ResponseWriter) {
-	cookie := http.Cookie{
-		Name:    "session_token",
-		Value:   "",
-		Path:    "/",
-		Expires: time.Unix(0, 0),
-	}
-	http.SetCookie(w, &cookie)
-}
-
-func (h *Handlers) ReadCookieUsername(w http.ResponseWriter, r *http.Request) string {
-	if cookie, err := r.Cookie("session_token"); err == nil {
-		value := make(map[string]string)
-		if err = cookieHandler.Decode("session_token", cookie.Value, &value); err == nil {
-			return value["username"]
-		}
-	}
-	return ""
-}
-
-func (h *Handlers) ReadCookieAvatar(w http.ResponseWriter, r *http.Request) string {
-	if cookie, err := r.Cookie("session_token"); err == nil {
-		value := make(map[string]string)
-		if err = cookieHandler.Decode("session_token", cookie.Value, &value); err == nil {
-			accounts := h.users
-			sort.Slice(accounts[:], func(i, j int) bool {
-				return accounts[i].Username < accounts[j].Username
-			})
-
-			iter := sort.Search(len(accounts), func(i int) bool {
-				return accounts[i].Username == value["username"]
-			})
-			return accounts[iter].Image
-		}
-	}
-	return ""
+	return nil
 }

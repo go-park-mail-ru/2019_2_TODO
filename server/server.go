@@ -1,91 +1,60 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
-	"sync"
+
+	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 )
 
 func main() {
-	handlers := Handlers{
-		users: make([]Credentials, 0),
-		mu:    &sync.Mutex{},
+	e := echo.New()
+
+	dsn := dataBaseConfig
+	dsn += "&charset=utf8"
+	dsn += "&interpolateParams=true"
+
+	db, err := sql.Open("mysql", dsn)
+
+	db.SetMaxOpenConns(10)
+
+	err = db.Ping()
+	if err != nil {
+		log.Println("Error while Ping")
 	}
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application-json")
+	usersRepo := &UsersRepository{
+		DB: db,
+	}
 
-		log.Println(r.URL.Path)
+	handlers := Handlers{
+		Users: usersRepo,
+	}
 
-		w.Write([]byte("{}"))
-	})
+	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+		Format: "[${method}] ${remote_ip}, ${uri} ${status}\n",
+	}))
+	e.Use(middleware.Recover())
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins:     []string{frontIP},
+		AllowMethods:     []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
+		AllowCredentials: true,
+	}))
 
-	http.HandleFunc("/signup/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application-json")
+	e.Static("/images", "images")
 
-		log.Println(r.URL.Path)
+	e.GET("/", handlers.handleOk)
+	e.GET("/checkUsers/", handlers.checkUsersForTesting)
+	e.GET("/signin/", handlers.handleSignInGet)
+	e.GET("/signin/profile/", handlers.handleGetProfile)
+	e.GET("/logout/", handlers.handleLogout)
 
-		if r.Method == http.MethodPost {
-			handlers.handleSignUp(w, r)
-			return
-		}
+	e.POST("/signup/", handlers.handleSignUp)
+	e.POST("/signin/", handlers.handleSignIn)
+	e.POST("/signin/profile/", handlers.handleChangeProfile)
+	e.POST("/signin/profileImage/", handlers.handleChangeImage)
 
-	})
-
-	http.HandleFunc("/signin/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application-json")
-
-		log.Println(r.URL.Path)
-
-		if r.Method == http.MethodPost {
-			handlers.handleSignIn(w, r)
-			return
-		}
-
-		handlers.handleSignInGet(w, r)
-	})
-
-	http.HandleFunc("/profile/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application-json")
-
-		log.Println(r.URL.Path)
-
-		if r.Method == http.MethodPost {
-			handlers.handleChangeProfile(w, r)
-			return
-		}
-
-		handlers.handleGetProfile(w, r)
-
-	})
-
-	http.HandleFunc("/profileImage/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application-json")
-
-		log.Println(r.URL.Path)
-
-		if r.Method == http.MethodPost {
-			handlers.handleChangeImage(w, r)
-			return
-		}
-
-	})
-
-	http.HandleFunc("/logout/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application-json")
-
-		log.Println(r.URL.Path)
-
-		handlers.handleLogout(w, r)
-	})
-
-	http.HandleFunc("/checkUsers/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application-json")
-
-		log.Println(r.URL.Path)
-
-		handlers.checkUsersForTesting(w, r)
-	})
-
-	http.ListenAndServe(":80", nil)
+	e.Logger.Fatal(e.Start(listenAddr))
 }
