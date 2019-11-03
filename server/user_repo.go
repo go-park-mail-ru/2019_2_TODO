@@ -8,7 +8,7 @@ import (
 type User struct {
 	ID       int64  `json:"id"`
 	Username string `json:"username"`
-	Password string `json:"-"`
+	Password string `json:"password"`
 	Avatar   string `json:"image"`
 }
 
@@ -62,12 +62,11 @@ func (repo *UsersRepository) SelectDataByLogin(username string) (*User, error) {
 
 // Create - create new user in dataBase with default avatar
 func (repo *UsersRepository) Create(elem *User) (int64, error) {
-	defaultAvatar := "images/avatar.png"
 	result, err := repo.DB.Exec(
 		"INSERT INTO users (`login`, `password`, `avatar`) VALUES (?, ?, ?)",
 		elem.Username,
 		elem.Password,
-		defaultAvatar,
+		elem.Avatar,
 	)
 	if err != nil {
 		return 0, err

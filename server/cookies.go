@@ -55,6 +55,9 @@ func ReadCookieID(ctx echo.Context) int64 {
 	if err != nil {
 		return -1
 	}
+	if session.Values["ID"] == nil {
+		return -1
+	}
 	return session.Values["ID"].(int64)
 }
 
@@ -64,6 +67,9 @@ func ReadCookieUsername(ctx echo.Context) string {
 	if err != nil {
 		return ""
 	}
+	if session.Values["username"] == nil {
+		return ""
+	}
 	return session.Values["username"].(string)
 }
 
@@ -71,6 +77,9 @@ func ReadCookieUsername(ctx echo.Context) string {
 func ReadCookieAvatar(ctx echo.Context) string {
 	session, err := SessionsStore.Get(ctx.Request(), "session_token")
 	if err != nil {
+		return ""
+	}
+	if session.Values["avatar"] == nil {
 		return ""
 	}
 	return session.Values["avatar"].(string)

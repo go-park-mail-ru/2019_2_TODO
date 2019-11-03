@@ -28,10 +28,13 @@ type Handlers struct {
 }
 
 func (h *Handlers) handleSignUp(ctx echo.Context) error {
-
 	newUserInput := new(User)
 
 	if err := ctx.Bind(newUserInput); err != nil {
+		log.Println(ctx.Request().Header.Get("Content-Type"))
+		log.Println(err)
+		log.Println(newUserInput)
+		log.Println(ctx.Request().Body)
 		return ctx.JSON(http.StatusBadRequest, "")
 	}
 
@@ -40,6 +43,8 @@ func (h *Handlers) handleSignUp(ctx echo.Context) error {
 
 	newUserInput.Password = base64.StdEncoding.EncodeToString(
 		convertPass(newUserInput.Password))
+
+	newUserInput.Avatar = "/images/avatar.png"
 
 	log.Println(newUserInput.Password)
 
@@ -57,7 +62,7 @@ func (h *Handlers) handleSignUp(ctx echo.Context) error {
 
 	log.Println(newUserInput.Username)
 
-	return ctx.JSON(http.StatusOK, "")
+	return nil
 }
 
 func (h *Handlers) handleSignIn(ctx echo.Context) error {
@@ -86,11 +91,11 @@ func (h *Handlers) handleSignIn(ctx echo.Context) error {
 	log.Println("UserData: ID - ", userRecord.ID, " Login - ", userRecord.Username,
 		" Avatar - ", userRecord.Avatar)
 
-	if err = SetCookie(ctx, *authCredentials); err != nil {
+	if err = SetCookie(ctx, *userRecord); err != nil {
 		ctx.JSON(http.StatusInternalServerError, "Cookie set error")
 	}
 
-	return ctx.JSON(http.StatusOK, "")
+	return nil
 }
 
 func (h *Handlers) handleSignInGet(ctx echo.Context) error {
@@ -104,15 +109,14 @@ func (h *Handlers) handleSignInGet(ctx echo.Context) error {
 			Username: cookieUsername,
 			Avatar:   backIP + cookieAvatar,
 		}
-
 		return ctx.JSON(http.StatusCreated, cookieUsernameInput)
 	}
 
-	return ctx.JSON(http.StatusOK, "")
+	return nil
 }
 
 func (h *Handlers) handleOk(ctx echo.Context) error {
-	return ctx.JSON(http.StatusOK, "")
+	return nil
 }
 
 func (h *Handlers) handleChangeProfile(ctx echo.Context) error {
@@ -152,29 +156,25 @@ func (h *Handlers) handleChangeProfile(ctx echo.Context) error {
 	}
 	log.Println("Update affectedRows: ", affected)
 
-	if err = ClearCookie(ctx); err != nil {
-		ctx.JSON(http.StatusInternalServerError, "Cookie clear error")
-	}
-
 	if err = SetCookie(ctx, *changeProfileCredentials); err != nil {
 		ctx.JSON(http.StatusInternalServerError, "Cookie set error")
 	}
 
-	return ctx.JSON(http.StatusOK, "")
+	return nil
 }
 
 func (h *Handlers) handleChangeImage(ctx echo.Context) error {
 
 	username := ReadCookieUsername(ctx)
 
-	err := loadAvatar(ctx, username)
+	fileName, err := loadAvatar(ctx, username)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, "")
 	}
 
 	changeData := new(User)
 
-	changeData.Avatar = "images/" + username + ".png"
+	changeData.Avatar = "/images/" + fileName
 
 	oldData, err := h.Users.SelectDataByLogin(username)
 	if err != nil {
@@ -193,38 +193,40 @@ func (h *Handlers) handleChangeImage(ctx echo.Context) error {
 	}
 	log.Println("Update affectedRows: ", affected)
 
-	return ctx.JSON(http.StatusOK, "")
+	if err = SetCookie(ctx, *changeData); err != nil {
+		ctx.JSON(http.StatusInternalServerError, "Cookie set error")
+	}
+
+	return nil
 }
 
-func loadAvatar(ctx echo.Context, username string) error {
+func loadAvatar(ctx echo.Context, username string) (string, error) {
 	file, err := ctx.FormFile("image")
 	if err != nil {
 		log.Println("Error formFile")
-		return err
+		return "", err
 	}
 
 	src, err := file.Open()
 	if err != nil {
 		log.Println("Error file while opening")
-		return err
+		return "", err
 	}
 	defer src.Close()
 
 	dst, err := os.Create(pathToImages + `images/` + file.Filename)
-	os.Rename(pathToImages+"images/"+file.Filename,
-		pathToImages+"images/"+username+".png")
 	if err != nil {
 		log.Println("Error creating file")
-		return err
+		return "", err
 	}
 	defer dst.Close()
 
 	if _, err = io.Copy(dst, src); err != nil {
 		log.Println("Error copy file")
-		return err
+		return "", err
 	}
 
-	return nil
+	return file.Filename, nil
 }
 
 func (h *Handlers) handleGetProfile(ctx echo.Context) error {
@@ -234,17 +236,11 @@ func (h *Handlers) handleGetProfile(ctx echo.Context) error {
 		Avatar:   ReadCookieAvatar(ctx),
 	}
 
+	if cookiesData.Username == "" {
+		return nil
+	}
+
 	return ctx.JSON(http.StatusOK, cookiesData)
-}
-
-func (h *Handlers) handleGetImage(ctx echo.Context) error {
-	avatar := ReadCookieAvatar(ctx)
-
-	log.Println(avatar)
-
-	http.ServeFile(ctx.Response(), ctx.Request(), pathToImages+avatar)
-
-	return ctx.JSON(http.StatusOK, "")
 }
 
 func (h *Handlers) handleLogout(ctx echo.Context) error {
@@ -267,5 +263,5 @@ func (h *Handlers) checkUsersForTesting(ctx echo.Context) error {
 
 	log.Println(users)
 
-	return ctx.JSON(http.StatusOK, "")
+	return nil
 }

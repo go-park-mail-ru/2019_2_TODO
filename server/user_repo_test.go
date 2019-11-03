@@ -261,10 +261,11 @@ func TestCreate(t *testing.T) {
 
 	username := "login"
 	password := "password"
-	defaultAvatar := "images/avatar.png"
+	defaultAvatar := "/images/avatar.png"
 	testItem := &User{
 		Username: username,
 		Password: password,
+		Avatar:   defaultAvatar,
 	}
 
 	//ok query

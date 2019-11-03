@@ -43,12 +43,13 @@ func main() {
 		AllowCredentials: true,
 	}))
 
+	e.Static("/images", "images")
+
 	e.GET("/", handlers.handleOk)
 	e.GET("/checkUsers/", handlers.checkUsersForTesting)
 	e.GET("/signin/", handlers.handleSignInGet)
 	e.GET("/signin/profile/", handlers.handleGetProfile)
 	e.GET("/logout/", handlers.handleLogout)
-	e.GET("/images/", handlers.handleGetImage)
 
 	e.POST("/signup/", handlers.handleSignUp)
 	e.POST("/signin/", handlers.handleSignIn)
