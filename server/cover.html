@@ -54,17 +54,9 @@
 			<div id="nav">
 				<select id="files">
 				
-				<option value="file0">mod/cookies.go (0.0%)</option>
+				<option value="file0">server/user/delivery/http/handlers.go (44.1%)</option>
 				
-				<option value="file1">mod/csrf_token.go (0.0%)</option>
-				
-				<option value="file2">mod/handlers.go (0.0%)</option>
-				
-				<option value="file3">mod/passwordCrypt.go (0.0%)</option>
-				
-				<option value="file4">mod/server.go (0.0%)</option>
-				
-				<option value="file5">mod/user_repo.go (100.0%)</option>
+				<option value="file1">server/user/repository/memory.go (75.6%)</option>
 				
 				</select>
 			</div>
@@ -78,185 +70,7 @@
 		</div>
 		<div id="content">
 		
-		<pre class="file" id="file0" style="display: none">package main
-
-import (
-        "github.com/gorilla/securecookie"
-        "github.com/gorilla/sessions"
-        "github.com/labstack/echo"
-)
-
-// SessionsStore - hold all cookies
-var SessionsStore = sessions.NewCookieStore(
-        securecookie.GenerateRandomKey(64),
-        securecookie.GenerateRandomKey(32),
-)
-
-// SetCookie - set cookie with necessary data
-func SetCookie(ctx echo.Context, userInfo User) error <span class="cov0" title="0">{
-        session, err := SessionsStore.Get(ctx.Request(), "session_token")
-        if err != nil </span><span class="cov0" title="0">{
-                return err
-        }</span>
-
-        <span class="cov0" title="0">session.Values["id"] = userInfo.ID
-        session.Values["username"] = userInfo.Username
-        session.Values["avatar"] = userInfo.Avatar
-
-        err = session.Save(ctx.Request(), ctx.Response())
-        if err != nil </span><span class="cov0" title="0">{
-                return err
-        }</span>
-        <span class="cov0" title="0">return nil</span>
-}
-
-// ClearCookie - delete cookie by set time in past date
-func ClearCookie(ctx echo.Context) error <span class="cov0" title="0">{
-        session, err := SessionsStore.Get(ctx.Request(), "session_token")
-        if err != nil </span><span class="cov0" title="0">{
-                return err
-        }</span>
-
-        <span class="cov0" title="0">session.Values["ID"] = nil
-        session.Values["username"] = ""
-        session.Values["avatar"] = ""
-        session.Options.MaxAge = -1
-
-        err = session.Save(ctx.Request(), ctx.Response())
-        if err != nil </span><span class="cov0" title="0">{
-                return err
-        }</span>
-        <span class="cov0" title="0">return nil</span>
-}
-
-// ReadCookieID - return ID from cookie
-func ReadCookieID(ctx echo.Context) int64 <span class="cov0" title="0">{
-        session, err := SessionsStore.Get(ctx.Request(), "session_token")
-        if err != nil </span><span class="cov0" title="0">{
-                return -1
-        }</span>
-        <span class="cov0" title="0">return session.Values["ID"].(int64)</span>
-}
-
-// ReadCookieUsername - return username from cookie
-func ReadCookieUsername(ctx echo.Context) string <span class="cov0" title="0">{
-        session, err := SessionsStore.Get(ctx.Request(), "session_token")
-        if err != nil </span><span class="cov0" title="0">{
-                return ""
-        }</span>
-        <span class="cov0" title="0">return session.Values["username"].(string)</span>
-}
-
-// ReadCookieAvatar - return avatar from cookie
-func ReadCookieAvatar(ctx echo.Context) string <span class="cov0" title="0">{
-        session, err := SessionsStore.Get(ctx.Request(), "session_token")
-        if err != nil </span><span class="cov0" title="0">{
-                return ""
-        }</span>
-        <span class="cov0" title="0">return session.Values["avatar"].(string)</span>
-}
-</pre>
-		
-		<pre class="file" id="file1" style="display: none">package main
-
-import (
-        "fmt"
-        "time"
-
-        "github.com/gorilla/sessions"
-
-        jwt "github.com/dgrijalva/jwt-go"
-)
-
-// Key - struct for sliding secret keys
-type Key struct {
-        Exp    int64
-        Secret string
-}
-
-// JwtToken - JSON object secret
-type JwtToken struct {
-        Secret []byte
-}
-
-// NewJwtToken - create JwtToken
-func NewJwtToken(secret string) (*JwtToken, error) <span class="cov0" title="0">{
-        return &amp;JwtToken{Secret: []byte(secret)}, nil
-}</span>
-
-// JwtCsrfClaims - records of csrf token
-type JwtCsrfClaims struct {
-        SessionID string `json:"sid"`
-        UserID    int64  `json:"uid"`
-        jwt.StandardClaims
-}
-
-// Create - create and sign JwtToken
-func (tk *JwtToken) Create(s *sessions.Session, tokenExpTime int64) (string, error) <span class="cov0" title="0">{
-        data := JwtCsrfClaims{
-                SessionID: s.ID,
-                UserID:    s.Values["id"].(int64),
-                StandardClaims: jwt.StandardClaims{
-                        ExpiresAt: tokenExpTime,
-                        IssuedAt:  time.Now().Unix(),
-                },
-        }
-        token := jwt.NewWithClaims(jwt.SigningMethodHS256, data)
-        return token.SignedString(tk.Secret)
-}</span>
-
-// Check - checks signing token
-func (tk *JwtToken) Check(s *sessions.Session, inputToken string) (bool, error) <span class="cov0" title="0">{
-        payload := &amp;JwtCsrfClaims{}
-        _, err := jwt.ParseWithClaims(inputToken, payload, tk.parseSecretGetterMultiKeys)
-        if err != nil </span><span class="cov0" title="0">{
-                return false, fmt.Errorf("cant parse jwt token: %v", err)
-        }</span>
-        <span class="cov0" title="0">if payload.Valid() != nil </span><span class="cov0" title="0">{
-                return false, fmt.Errorf("invalid jwt token: %v", err)
-        }</span>
-        <span class="cov0" title="0">return payload.SessionID == s.ID &amp;&amp; payload.UserID == s.Values["ID"], nil</span>
-}
-
-// parseSecretGetter - parse single secret token
-func (tk *JwtToken) parseSecretGetter(token *jwt.Token) (interface{}, error) <span class="cov0" title="0">{
-        method, ok := token.Method.(*jwt.SigningMethodHMAC)
-        if !ok || method.Alg() != "HS256" </span><span class="cov0" title="0">{
-                return nil, fmt.Errorf("bad sign method")
-        }</span>
-        <span class="cov0" title="0">return tk.Secret, nil</span>
-}
-
-// parseSecretGetterMultiKeys - parse multi secret tokens
-func (tk *JwtToken) parseSecretGetterMultiKeys(token *jwt.Token) (interface{}, error) <span class="cov0" title="0">{
-        method, ok := token.Method.(*jwt.SigningMethodHMAC)
-        if !ok || method.Alg() != "HS256" </span><span class="cov0" title="0">{
-                return nil, fmt.Errorf("bad sign method")
-        }</span>
-        <span class="cov0" title="0">keys := []*Key{
-                &amp;Key{Exp: 10, Secret: "abs"},
-                &amp;Key{Exp: 20, Secret: "hsdh"},
-                &amp;Key{Exp: 30, Secret: "aosgja"},
-        }
-        payload, ok := token.Claims.(*JwtCsrfClaims)
-        if !ok </span><span class="cov0" title="0">{
-                return nil, fmt.Errorf("Claims error")
-        }</span>
-        <span class="cov0" title="0">secret := ""
-        for _, key := range keys </span><span class="cov0" title="0">{
-                if key.Exp &gt; payload.ExpiresAt </span><span class="cov0" title="0">{
-                        secret = key.Secret
-                        break</span>
-                }
-        }
-        <span class="cov0" title="0">if secret == "" </span><span class="cov0" title="0">{
-                return nil, fmt.Errorf("no secret found")
-        }</span>
-        <span class="cov0" title="0">return secret, nil</span>
-}
-</pre>
-		
-		<pre class="file" id="file2" style="display: none">package main
+		<pre class="file" id="file0" style="display: none">package http
 
 import (
         "encoding/base64"
@@ -264,40 +78,45 @@ import (
         "log"
         "net/http"
         "os"
+        "server/model"
+        "server/user"
+        "server/user/utils"
 
-        _ "github.com/go-sql-driver/mysql"
         "github.com/labstack/echo"
         "github.com/microcosm-cc/bluemonday"
 )
 
-// UserCRUD - User DataBase interface
-type UserCRUD interface {
-        ListAll() ([]*User, error)
-        SelectByID(int64) (*User, error)
-        SelectDataByLogin(string) (*User, error)
-        Create(*User) (int64, error)
-        Update(*User) (int64, error)
-        Delete(int64) (int64, error)
-}
-
 // Handlers - use UserCRUD
 type Handlers struct {
-        Users UserCRUD
+        Users user.Usecase
 }
 
-func (h *Handlers) handleSignUp(ctx echo.Context) error <span class="cov0" title="0">{
+// NewUserHandler - deliver our handlers in http
+func NewUserHandler(e *echo.Echo, us user.Usecase) <span class="cov0" title="0">{
 
-        newUserInput := new(User)
+        handlers := Handlers{Users: us}
+        e.GET("/", handlers.handleOk)
+        e.GET("/signin/", handlers.handleSignInGet)
+        e.GET("/signin/profile/", handlers.handleGetProfile)
+        e.GET("/logout/", handlers.handleLogout)
+
+        e.POST("/signup/", handlers.handleSignUp)
+        e.POST("/signin/", handlers.handleSignIn)
+        e.POST("/signin/profile/", handlers.handleChangeProfile)
+        e.POST("/signin/profileImage/", handlers.handleChangeImage)
+}</span>
+
+func (h *Handlers) handleSignUp(ctx echo.Context) error <span class="cov8" title="1">{
+        newUserInput := new(model.User)
 
         if err := ctx.Bind(newUserInput); err != nil </span><span class="cov0" title="0">{
                 return ctx.JSON(http.StatusBadRequest, "")
         }</span>
 
-        <span class="cov0" title="0">sanitizer := bluemonday.UGCPolicy()
+        <span class="cov8" title="1">sanitizer := bluemonday.UGCPolicy()
         newUserInput.Username = sanitizer.Sanitize(newUserInput.Username)
 
-        newUserInput.Password = base64.StdEncoding.EncodeToString(
-                convertPass(newUserInput.Password))
+        newUserInput.Avatar = "/images/avatar.png"
 
         lastID, err := h.Users.Create(newUserInput)
         if err != nil </span><span class="cov0" title="0">{
@@ -305,26 +124,26 @@ func (h *Handlers) handleSignUp(ctx echo.Context) error <span class="cov0" title
                 return ctx.JSON(http.StatusInternalServerError, "")
         }</span>
 
-        <span class="cov0" title="0">log.Println("Last id: ", lastID)
+        <span class="cov8" title="1">log.Println("Last id: ", lastID)
 
-        if err = SetCookie(ctx, *newUserInput); err != nil </span><span class="cov0" title="0">{
+        if err = utils.SetCookie(ctx, *newUserInput); err != nil </span><span class="cov0" title="0">{
                 ctx.JSON(http.StatusInternalServerError, "Cookie set error")
         }</span>
 
-        <span class="cov0" title="0">log.Println(newUserInput.Username)
+        <span class="cov8" title="1">log.Println(newUserInput.Username)
 
-        return ctx.JSON(http.StatusOK, "")</span>
+        return nil</span>
 }
 
-func (h *Handlers) handleSignIn(ctx echo.Context) error <span class="cov0" title="0">{
+func (h *Handlers) handleSignIn(ctx echo.Context) error <span class="cov8" title="1">{
 
-        authCredentials := new(User)
+        authCredentials := new(model.User)
 
         if err := ctx.Bind(authCredentials); err != nil </span><span class="cov0" title="0">{
                 return ctx.JSON(http.StatusBadRequest, "")
         }</span>
 
-        <span class="cov0" title="0">sanitizer := bluemonday.UGCPolicy()
+        <span class="cov8" title="1">sanitizer := bluemonday.UGCPolicy()
         authCredentials.Username = sanitizer.Sanitize(authCredentials.Username)
 
         userRecord, err := h.Users.SelectDataByLogin(authCredentials.Username)
@@ -333,109 +152,99 @@ func (h *Handlers) handleSignIn(ctx echo.Context) error <span class="cov0" title
                 return ctx.JSON(http.StatusUnauthorized, "No such user!")
         }</span>
 
-        <span class="cov0" title="0">passToCheck, err := base64.StdEncoding.DecodeString(userRecord.Password)
+        <span class="cov8" title="1">passToCheck, err := base64.StdEncoding.DecodeString(userRecord.Password)
 
-        if err != nil || !checkPass(passToCheck, authCredentials.Password) </span><span class="cov0" title="0">{
+        if err != nil || !utils.CheckPass(passToCheck, authCredentials.Password) </span><span class="cov0" title="0">{
                 return ctx.JSON(http.StatusUnauthorized, "Incorrect password!")
         }</span>
 
-        <span class="cov0" title="0">log.Println("UserData: ID - ", userRecord.ID, " Login - ", userRecord.Username,
+        <span class="cov8" title="1">log.Println("UserData: ID - ", userRecord.ID, " Login - ", userRecord.Username,
                 " Avatar - ", userRecord.Avatar)
 
-        if err = SetCookie(ctx, *authCredentials); err != nil </span><span class="cov0" title="0">{
+        if err = utils.SetCookie(ctx, *userRecord); err != nil </span><span class="cov0" title="0">{
                 ctx.JSON(http.StatusInternalServerError, "Cookie set error")
         }</span>
 
-        <span class="cov0" title="0">return ctx.JSON(http.StatusOK, "")</span>
+        <span class="cov8" title="1">return nil</span>
 }
 
-func (h *Handlers) handleSignInGet(ctx echo.Context) error <span class="cov0" title="0">{
-        cookieUsername := ReadCookieUsername(ctx)
-        cookieAvatar := ReadCookieAvatar(ctx)
+func (h *Handlers) handleSignInGet(ctx echo.Context) error <span class="cov8" title="1">{
+        cookieUsername := utils.ReadCookieUsername(ctx)
+        cookieAvatar := utils.ReadCookieAvatar(ctx)
 
         log.Println(cookieUsername + " " + cookieAvatar)
 
-        if cookieUsername != "" </span><span class="cov0" title="0">{
-                cookieUsernameInput := User{
+        if cookieUsername != "" </span><span class="cov8" title="1">{
+                cookieUsernameInput := model.User{
                         Username: cookieUsername,
-                        Avatar:   backIP + cookieAvatar,
+                        Avatar:   utils.BackIP + cookieAvatar,
                 }
-
+                log.Println(cookieUsernameInput)
                 return ctx.JSON(http.StatusCreated, cookieUsernameInput)
         }</span>
 
-        <span class="cov0" title="0">return ctx.JSON(http.StatusOK, "")</span>
+        <span class="cov8" title="1">return nil</span>
 }
 
 func (h *Handlers) handleOk(ctx echo.Context) error <span class="cov0" title="0">{
-        return ctx.JSON(http.StatusOK, "")
+        return nil
 }</span>
 
-func (h *Handlers) handleChangeProfile(ctx echo.Context) error <span class="cov0" title="0">{
+func (h *Handlers) handleChangeProfile(ctx echo.Context) error <span class="cov8" title="1">{
 
-        changeProfileCredentials := new(User)
+        changeProfileCredentials := new(model.User)
 
         if err := ctx.Bind(changeProfileCredentials); err != nil </span><span class="cov0" title="0">{
                 return ctx.JSON(http.StatusBadRequest, "")
         }</span>
 
-        <span class="cov0" title="0">oldUsername := ReadCookieUsername(ctx)
+        <span class="cov8" title="1">oldUsername := utils.ReadCookieUsername(ctx)
 
         oldData, err := h.Users.SelectDataByLogin(oldUsername)
 
         if err != nil </span><span class="cov0" title="0">{
-                log.Println("Users.Update error: ", err)
-                return ctx.JSON(http.StatusInternalServerError, "")
+                return ctx.JSON(http.StatusInternalServerError, "Users.SelectDataByLogin error")
         }</span>
 
-        <span class="cov0" title="0">changeProfileCredentials.ID = oldData.ID
+        <span class="cov8" title="1">changeProfileCredentials.ID = oldData.ID
         changeProfileCredentials.Avatar = oldData.Avatar
         if changeProfileCredentials.Username == "" </span><span class="cov0" title="0">{
                 changeProfileCredentials.Username = oldData.Username
         }</span>
 
-        <span class="cov0" title="0">if changeProfileCredentials.Password == "" </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if changeProfileCredentials.Password == "" </span><span class="cov0" title="0">{
                 changeProfileCredentials.Password = oldData.Password
-        }</span> else<span class="cov0" title="0"> {
-                changeProfileCredentials.Password = base64.StdEncoding.EncodeToString(
-                        convertPass(changeProfileCredentials.Password))
         }</span>
 
-        <span class="cov0" title="0">affected, err := h.Users.Update(changeProfileCredentials)
+        <span class="cov8" title="1">affected, err := h.Users.Update(changeProfileCredentials)
         if err != nil </span><span class="cov0" title="0">{
-                log.Println("Users.Update error: ", err)
-                return ctx.JSON(http.StatusInternalServerError, "")
+                return ctx.JSON(http.StatusInternalServerError, "Users.Update error")
         }</span>
-        <span class="cov0" title="0">log.Println("Update affectedRows: ", affected)
+        <span class="cov8" title="1">log.Println("Update affectedRows: ", affected)
 
-        if err = ClearCookie(ctx); err != nil </span><span class="cov0" title="0">{
-                ctx.JSON(http.StatusInternalServerError, "Cookie clear error")
-        }</span>
-
-        <span class="cov0" title="0">if err = SetCookie(ctx, *changeProfileCredentials); err != nil </span><span class="cov0" title="0">{
+        if err = utils.SetCookie(ctx, *changeProfileCredentials); err != nil </span><span class="cov0" title="0">{
                 ctx.JSON(http.StatusInternalServerError, "Cookie set error")
         }</span>
 
-        <span class="cov0" title="0">return ctx.JSON(http.StatusOK, "")</span>
+        <span class="cov8" title="1">return nil</span>
 }
 
 func (h *Handlers) handleChangeImage(ctx echo.Context) error <span class="cov0" title="0">{
 
-        username := ReadCookieUsername(ctx)
+        username := utils.ReadCookieUsername(ctx)
 
-        err := loadAvatar(ctx, username)
+        fileName, err := loadAvatar(ctx, username)
         if err != nil </span><span class="cov0" title="0">{
                 return ctx.JSON(http.StatusInternalServerError, "")
         }</span>
 
-        <span class="cov0" title="0">changeData := new(User)
+        <span class="cov0" title="0">changeData := new(model.User)
 
-        changeData.Avatar = "images/" + username + ".png"
+        changeData.Avatar = "/images/" + fileName
 
         oldData, err := h.Users.SelectDataByLogin(username)
         if err != nil </span><span class="cov0" title="0">{
-                log.Println("Users.Update error: ", err)
-                return ctx.JSON(http.StatusInternalServerError, "")
+                return ctx.JSON(http.StatusInternalServerError, "Users.Update error:")
         }</span>
 
         <span class="cov0" title="0">changeData.ID = oldData.ID
@@ -444,138 +253,84 @@ func (h *Handlers) handleChangeImage(ctx echo.Context) error <span class="cov0" 
 
         affected, err := h.Users.Update(changeData)
         if err != nil </span><span class="cov0" title="0">{
-                log.Println("Users.Update error: ", err)
-                return ctx.JSON(http.StatusInternalServerError, "")
+                return ctx.JSON(http.StatusInternalServerError, "Users.Update error")
         }</span>
         <span class="cov0" title="0">log.Println("Update affectedRows: ", affected)
 
-        return ctx.JSON(http.StatusOK, "")</span>
-}
-
-func loadAvatar(ctx echo.Context, username string) error <span class="cov0" title="0">{
-        file, err := ctx.FormFile("image")
-        if err != nil </span><span class="cov0" title="0">{
-                log.Println("Error formFile")
-                return err
-        }</span>
-
-        <span class="cov0" title="0">src, err := file.Open()
-        if err != nil </span><span class="cov0" title="0">{
-                log.Println("Error file while opening")
-                return err
-        }</span>
-        <span class="cov0" title="0">defer src.Close()
-
-        dst, err := os.Create(pathToImages + `images/` + file.Filename)
-        os.Rename(pathToImages+"images/"+file.Filename,
-                pathToImages+"images/"+username+".png")
-        if err != nil </span><span class="cov0" title="0">{
-                log.Println("Error creating file")
-                return err
-        }</span>
-        <span class="cov0" title="0">defer dst.Close()
-
-        if _, err = io.Copy(dst, src); err != nil </span><span class="cov0" title="0">{
-                log.Println("Error copy file")
-                return err
+        if err = utils.SetCookie(ctx, *changeData); err != nil </span><span class="cov0" title="0">{
+                ctx.JSON(http.StatusInternalServerError, "Cookie set error")
         }</span>
 
         <span class="cov0" title="0">return nil</span>
 }
 
-func (h *Handlers) handleGetProfile(ctx echo.Context) error <span class="cov0" title="0">{
+func loadAvatar(ctx echo.Context, username string) (string, error) <span class="cov0" title="0">{
+        file, err := ctx.FormFile("image")
+        if err != nil </span><span class="cov0" title="0">{
+                log.Println("Error formFile")
+                return "", err
+        }</span>
 
-        cookiesData := User{
-                Username: ReadCookieUsername(ctx),
-                Avatar:   ReadCookieAvatar(ctx),
+        <span class="cov0" title="0">src, err := file.Open()
+        if err != nil </span><span class="cov0" title="0">{
+                log.Println("Error file while opening")
+                return "", err
+        }</span>
+        <span class="cov0" title="0">defer src.Close()
+
+        dst, err := os.Create(utils.PathToImages + `images/` + file.Filename)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Println("Error creating file")
+                return "", err
+        }</span>
+        <span class="cov0" title="0">defer dst.Close()
+
+        if _, err = io.Copy(dst, src); err != nil </span><span class="cov0" title="0">{
+                log.Println("Error copy file")
+                return "", err
+        }</span>
+
+        <span class="cov0" title="0">return file.Filename, nil</span>
+}
+
+func (h *Handlers) handleGetProfile(ctx echo.Context) error <span class="cov8" title="1">{
+
+        cookiesData := model.User{
+                Username: utils.ReadCookieUsername(ctx),
+                Avatar:   utils.ReadCookieAvatar(ctx),
         }
 
-        return ctx.JSON(http.StatusOK, cookiesData)
-}</span>
-
-func (h *Handlers) handleGetImage(ctx echo.Context) error <span class="cov0" title="0">{
-        avatar := ReadCookieAvatar(ctx)
-
-        log.Println(avatar)
-
-        http.ServeFile(ctx.Response(), ctx.Request(), pathToImages+avatar)
-
-        return ctx.JSON(http.StatusOK, "")
-}</span>
-
-func (h *Handlers) handleLogout(ctx echo.Context) error <span class="cov0" title="0">{
-        ClearCookie(ctx)
-        return ctx.JSON(http.StatusOK, "")
-}</span>
-
-func (h *Handlers) checkUsersForTesting(ctx echo.Context) error <span class="cov0" title="0">{
-        if ReadCookieUsername(ctx) != "" </span><span class="cov0" title="0">{
-                log.Println("Success checking cook")
+        if cookiesData.Username == "" </span><span class="cov0" title="0">{
+                return nil
         }</span>
 
-        <span class="cov0" title="0">users, err := h.Users.ListAll()
-        if err != nil </span><span class="cov0" title="0">{
-                log.Println("Error while getting all users: ", err)
-                return ctx.JSON(http.StatusInternalServerError, "")
-        }</span>
-
-        <span class="cov0" title="0">ctx.JSON(http.StatusOK, users)
-
-        log.Println(users)
-
-        return ctx.JSON(http.StatusOK, "")</span>
+        <span class="cov8" title="1">return ctx.JSON(http.StatusOK, cookiesData)</span>
 }
-</pre>
-		
-		<pre class="file" id="file3" style="display: none">package main
 
-import (
-        "bytes"
-        "crypto/rand"
-        "log"
-
-        "golang.org/x/crypto/argon2"
-)
-
-func hashPass(salt []byte, plainPassword string) []byte <span class="cov0" title="0">{
-        hashedPass := argon2.IDKey([]byte(plainPassword), []byte(salt), 1, 64*1024, 4, 32)
-        return append(salt, hashedPass...)
-}</span>
-
-func checkPass(passHash []byte, plainPassword string) bool <span class="cov0" title="0">{
-        salt := passHash[0:8]
-        userPassHash := hashPass(salt, plainPassword)
-        log.Println(userPassHash)
-        return bytes.Equal(userPassHash, passHash)
-}</span>
-
-func convertPass(plainPassword string) []byte <span class="cov0" title="0">{
-        salt := make([]byte, 8)
-        rand.Read(salt)
-        return hashPass(salt, plainPassword)
+func (h *Handlers) handleLogout(ctx echo.Context) error <span class="cov8" title="1">{
+        utils.ClearCookie(ctx)
+        return ctx.JSON(http.StatusOK, "")
 }</span>
 </pre>
 		
-		<pre class="file" id="file4" style="display: none">package main
+		<pre class="file" id="file1" style="display: none">package repository
 
 import (
         "database/sql"
+        "encoding/base64"
         "log"
-        "net/http"
-
-        "github.com/labstack/echo"
-        "github.com/labstack/echo/middleware"
+        "server/model"
+        "server/user"
+        "server/user/utils"
 )
 
-func main() <span class="cov0" title="0">{
-        e := echo.New()
-
-        dsn := dataBaseConfig
+// NewUserMemoryRepository - create connection and return new repository
+func NewUserMemoryRepository() user.Repository <span class="cov0" title="0">{
+        dsn := utils.DataBaseConfig
         dsn += "&amp;charset=utf8"
         dsn += "&amp;interpolateParams=true"
 
         db, err := sql.Open("mysql", dsn)
-
         db.SetMaxOpenConns(10)
 
         err = db.Ping()
@@ -583,52 +338,9 @@ func main() <span class="cov0" title="0">{
                 log.Println("Error while Ping")
         }</span>
 
-        <span class="cov0" title="0">usersRepo := &amp;UsersRepository{
+        <span class="cov0" title="0">return &amp;UsersRepository{
                 DB: db,
-        }
-
-        handlers := Handlers{
-                Users: usersRepo,
-        }
-
-        e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
-                Format: "[${method}] ${remote_ip}, ${uri} ${status}\n",
-        }))
-        e.Use(middleware.Recover())
-        e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-                AllowOrigins:     []string{frontIP},
-                AllowMethods:     []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
-                AllowCredentials: true,
-        }))
-
-        e.GET("/", handlers.handleOk)
-        e.GET("/checkUsers/", handlers.checkUsersForTesting)
-        e.GET("/signin/", handlers.handleSignInGet)
-        e.GET("/signin/profile/", handlers.handleGetProfile)
-        e.GET("/logout/", handlers.handleLogout)
-        e.GET("/images/", handlers.handleGetImage)
-
-        e.POST("/signup/", handlers.handleSignUp)
-        e.POST("/signin/", handlers.handleSignIn)
-        e.POST("/signin/profile/", handlers.handleChangeProfile)
-        e.POST("/signin/profileImage/", handlers.handleChangeImage)
-
-        e.Logger.Fatal(e.Start(listenAddr))</span>
-}
-</pre>
-		
-		<pre class="file" id="file5" style="display: none">package main
-
-import (
-        "database/sql"
-)
-
-// User - data for user DataBase
-type User struct {
-        ID       int64  `json:"id"`
-        Username string `json:"username"`
-        Password string `json:"-"`
-        Avatar   string `json:"image"`
+        }</span>
 }
 
 // UsersRepository - uses pointer of any DataBase
@@ -637,15 +349,15 @@ type UsersRepository struct {
 }
 
 // ListAll - show all public information
-func (repo *UsersRepository) ListAll() ([]*User, error) <span class="cov8" title="1">{
-        users := []*User{}
+func (repo *UsersRepository) ListAll() ([]*model.User, error) <span class="cov8" title="1">{
+        users := []*model.User{}
         rows, err := repo.DB.Query("SELECT id, login, avatar FROM users")
         if err != nil </span><span class="cov8" title="1">{
                 return nil, err
         }</span>
         <span class="cov8" title="1">defer rows.Close()
         for rows.Next() </span><span class="cov8" title="1">{
-                record := &amp;User{}
+                record := &amp;model.User{}
                 err = rows.Scan(&amp;record.ID, &amp;record.Username, &amp;record.Avatar)
                 if err != nil </span><span class="cov8" title="1">{
                         return nil, err
@@ -656,8 +368,8 @@ func (repo *UsersRepository) ListAll() ([]*User, error) <span class="cov8" title
 }
 
 // SelectByID - select all user`s data by ID
-func (repo *UsersRepository) SelectByID(id int64) (*User, error) <span class="cov8" title="1">{
-        record := &amp;User{}
+func (repo *UsersRepository) SelectByID(id int64) (*model.User, error) <span class="cov8" title="1">{
+        record := &amp;model.User{}
         err := repo.DB.
                 QueryRow("SELECT id, login, password, avatar FROM users WHERE id = ?", id).
                 Scan(&amp;record.ID, &amp;record.Username, &amp;record.Password, &amp;record.Avatar)
@@ -668,8 +380,8 @@ func (repo *UsersRepository) SelectByID(id int64) (*User, error) <span class="co
 }
 
 // SelectDataByLogin - select all user`s data by Login
-func (repo *UsersRepository) SelectDataByLogin(username string) (*User, error) <span class="cov8" title="1">{
-        record := &amp;User{}
+func (repo *UsersRepository) SelectDataByLogin(username string) (*model.User, error) <span class="cov8" title="1">{
+        record := &amp;model.User{}
         err := repo.DB.
                 QueryRow("SELECT id, login, password, avatar FROM users WHERE login = ?", username).
                 Scan(&amp;record.ID, &amp;record.Username, &amp;record.Password, &amp;record.Avatar)
@@ -680,22 +392,25 @@ func (repo *UsersRepository) SelectDataByLogin(username string) (*User, error) <
 }
 
 // Create - create new user in dataBase with default avatar
-func (repo *UsersRepository) Create(elem *User) (int64, error) <span class="cov8" title="1">{
-        defaultAvatar := "images/avatar.png"
+func (repo *UsersRepository) Create(elem *model.User) (int64, error) <span class="cov8" title="1">{
+        elem.Password = base64.StdEncoding.EncodeToString(
+                utils.ConvertPass(elem.Password))
         result, err := repo.DB.Exec(
                 "INSERT INTO users (`login`, `password`, `avatar`) VALUES (?, ?, ?)",
                 elem.Username,
                 elem.Password,
-                defaultAvatar,
+                elem.Avatar,
         )
         if err != nil </span><span class="cov8" title="1">{
                 return 0, err
         }</span>
-        <span class="cov8" title="1">return result.LastInsertId()</span>
+        <span class="cov0" title="0">return result.LastInsertId()</span>
 }
 
 // Update - update user`s data in DataBase
-func (repo *UsersRepository) Update(elem *User) (int64, error) <span class="cov8" title="1">{
+func (repo *UsersRepository) Update(elem *model.User) (int64, error) <span class="cov8" title="1">{
+        elem.Password = base64.StdEncoding.EncodeToString(
+                utils.ConvertPass(elem.Password))
         result, err := repo.DB.Exec(
                 "UPDATE users SET"+
                         "`login` = ?"+
@@ -710,7 +425,7 @@ func (repo *UsersRepository) Update(elem *User) (int64, error) <span class="cov8
         if err != nil </span><span class="cov8" title="1">{
                 return 0, err
         }</span>
-        <span class="cov8" title="1">return result.RowsAffected()</span>
+        <span class="cov0" title="0">return result.RowsAffected()</span>
 }
 
 // Delete - delete user`s record in DataBase
