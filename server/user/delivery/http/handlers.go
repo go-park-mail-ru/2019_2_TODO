@@ -60,16 +60,14 @@ func (h *Handlers) handleSignUp(ctx echo.Context) error {
 		ctx.JSON(http.StatusInternalServerError, "Cookie set error")
 	}
 
-	t, err := utils.SetToken(ctx)
+	err = utils.SetToken(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, "Token set error")
 	}
 
 	log.Println(newUserInput.Username)
 
-	return ctx.JSON(http.StatusOK, echo.Map{
-		"csrf-token": t,
-	})
+	return nil
 }
 
 func (h *Handlers) handleSignIn(ctx echo.Context) error {
@@ -102,14 +100,12 @@ func (h *Handlers) handleSignIn(ctx echo.Context) error {
 		ctx.JSON(http.StatusInternalServerError, "Cookie set error")
 	}
 
-	t, err := utils.SetToken(ctx)
+	err = utils.SetToken(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, "Token set error")
 	}
 
-	return ctx.JSON(http.StatusOK, echo.Map{
-		"csrf-token": t,
-	})
+	return nil
 }
 
 func (h *Handlers) handleSignInGet(ctx echo.Context) error {
