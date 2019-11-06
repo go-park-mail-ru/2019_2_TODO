@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"server/middlewares"
 	"server/model"
 	"server/user"
 	"server/user/utils"
@@ -21,12 +22,6 @@ type Handlers struct {
 
 // NewUserHandler - deliver our handlers in http
 func NewUserHandler(e *echo.Echo, us user.Usecase) {
-
-	// config := middleware.JWTConfig{
-	// 	Claims:     &utils.JwtCsrfClaims{},
-	// 	SigningKey: []byte(utils.Secret),
-	// }
-
 	handlers := Handlers{Users: us}
 
 	e.GET("/", handlers.handleOk)
@@ -34,10 +29,10 @@ func NewUserHandler(e *echo.Echo, us user.Usecase) {
 	e.GET("/signin/profile/", handlers.handleGetProfile)
 	e.GET("/logout/", handlers.handleLogout)
 
-	e.POST("/signup/", handlers.handleSignUp /*middleware.JWTWithConfig(config)*/)
-	e.POST("/signin/", handlers.handleSignIn /*middleware.JWTWithConfig(config)*/)
-	e.POST("/signin/profile/", handlers.handleChangeProfile /*middleware.JWTWithConfig(config)*/)
-	e.POST("/signin/profileImage/", handlers.handleChangeImage /*middleware.JWTWithConfig(config)*/)
+	e.POST("/signup/", handlers.handleSignUp)
+	e.POST("/signin/", handlers.handleSignIn)
+	e.POST("/signin/profile/", handlers.handleChangeProfile, middlewares.JWTMiddlewareCustom)
+	e.POST("/signin/profileImage/", handlers.handleChangeImage, middlewares.JWTMiddlewareCustom)
 
 }
 
@@ -65,9 +60,16 @@ func (h *Handlers) handleSignUp(ctx echo.Context) error {
 		ctx.JSON(http.StatusInternalServerError, "Cookie set error")
 	}
 
+	t, err := utils.SetToken(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, "Token set error")
+	}
+
 	log.Println(newUserInput.Username)
 
-	return nil
+	return ctx.JSON(http.StatusOK, echo.Map{
+		"csrf-token": t,
+	})
 }
 
 func (h *Handlers) handleSignIn(ctx echo.Context) error {
@@ -100,7 +102,14 @@ func (h *Handlers) handleSignIn(ctx echo.Context) error {
 		ctx.JSON(http.StatusInternalServerError, "Cookie set error")
 	}
 
-	return nil
+	t, err := utils.SetToken(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, "Token set error")
+	}
+
+	return ctx.JSON(http.StatusOK, echo.Map{
+		"csrf-token": t,
+	})
 }
 
 func (h *Handlers) handleSignInGet(ctx echo.Context) error {

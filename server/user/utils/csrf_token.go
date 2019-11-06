@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gorilla/sessions"
+	"github.com/labstack/echo"
 
 	jwt "github.com/dgrijalva/jwt-go"
 )
@@ -66,4 +67,23 @@ func (tk *JwtToken) parseSecretGetter(token *jwt.Token) (interface{}, error) {
 		return nil, fmt.Errorf("bad sign method")
 	}
 	return tk.Secret, nil
+}
+
+// SetToken - set and sign token and return token and error
+func SetToken(ctx echo.Context) (string, error) {
+	session, err := SessionsStore.Get(ctx.Request(), "session_token")
+	if err != nil {
+		return "", err
+	}
+
+	token, err := NewJwtToken(Secret)
+	if err != nil {
+		return "", err
+	}
+
+	t, err := token.Create(session, time.Now().Add(time.Hour*72).Unix())
+	if err != nil {
+		return "", err
+	}
+	return t, nil
 }
