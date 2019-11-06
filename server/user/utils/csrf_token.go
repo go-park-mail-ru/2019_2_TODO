@@ -3,6 +3,8 @@ package utils
 import (
 	"fmt"
 	"time"
+	"net/http"
+	"log"
 
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo"
@@ -50,6 +52,7 @@ func (tk *JwtToken) Create(s *sessions.Session, tokenExpTime int64) (string, err
 // Check - checks signing token
 func (tk *JwtToken) Check(s *sessions.Session, inputToken string) (bool, error) {
 	payload := &JwtCsrfClaims{}
+	log.Println(inputToken)
 	_, err := jwt.ParseWithClaims(inputToken, payload, tk.parseSecretGetter)
 	if err != nil {
 		return false, fmt.Errorf("cant parse jwt token: %v", err)
@@ -70,20 +73,31 @@ func (tk *JwtToken) parseSecretGetter(token *jwt.Token) (interface{}, error) {
 }
 
 // SetToken - set and sign token and return token and error
-func SetToken(ctx echo.Context) (string, error) {
+func SetToken(ctx echo.Context) error {
 	session, err := SessionsStore.Get(ctx.Request(), "session_token")
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	token, err := NewJwtToken(Secret)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	t, err := token.Create(session, time.Now().Add(time.Hour*72).Unix())
+	expiresAt := time.Now().Add(time.Hour*72).Unix()
+
+	t, err := token.Create(session, expiresAt)
 	if err != nil {
-		return "", err
+		return err
 	}
-	return t, nil
+
+	cookie := &http.Cookie{
+		Name:    "Csrf-Token",
+		Value:   t,
+		Expires: time.Now().AddDate(0, 0, 1),
+	}
+
+	ctx.SetCookie(cookie)
+
+	return nil
 }

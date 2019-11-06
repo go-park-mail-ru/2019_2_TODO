@@ -2,7 +2,6 @@ package repository
 
 import (
 	"database/sql"
-	"encoding/base64"
 	"log"
 	"server/model"
 	"server/user"
@@ -78,8 +77,6 @@ func (repo *UsersRepository) SelectDataByLogin(username string) (*model.User, er
 
 // Create - create new user in dataBase with default avatar
 func (repo *UsersRepository) Create(elem *model.User) (int64, error) {
-	elem.Password = base64.StdEncoding.EncodeToString(
-		utils.ConvertPass(elem.Password))
 	result, err := repo.DB.Exec(
 		"INSERT INTO users (`login`, `password`, `avatar`) VALUES (?, ?, ?)",
 		elem.Username,
@@ -94,8 +91,6 @@ func (repo *UsersRepository) Create(elem *model.User) (int64, error) {
 
 // Update - update user`s data in DataBase
 func (repo *UsersRepository) Update(elem *model.User) (int64, error) {
-	elem.Password = base64.StdEncoding.EncodeToString(
-		utils.ConvertPass(elem.Password))
 	result, err := repo.DB.Exec(
 		"UPDATE users SET"+
 			"`login` = ?"+

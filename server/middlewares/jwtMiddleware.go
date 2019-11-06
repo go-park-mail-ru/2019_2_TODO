@@ -3,6 +3,9 @@ package middlewares
 import (
 	"net/http"
 	"server/user/utils"
+	"log"
+	"strings"
+	"time"
 
 	"github.com/labstack/echo"
 )
@@ -15,17 +18,26 @@ func JWTMiddlewareCustom(next echo.HandlerFunc) echo.HandlerFunc {
 		if err != nil {
 			return err
 		}
-
-		token := ctx.Request().Header.Get("csrf-token")
-
-		ok, err := tokenHandler.Check(session, token)
-		if !ok {
-			return ctx.JSON(http.StatusBadRequest, "wrong csrf-token")
+		expiresAt := time.Now().Add(time.Hour*72).Unix()
+		token, err := tokenHandler.Create(session, expiresAt)
+		if err != nil {
+			return ctx.JSON(http.StatusInternalServerError, "Token Create")
 		}
+
+		c, err := ctx.Request().Cookie("Csrf-Token")
 		if err != nil {
 			return err
+		}
+		tokenFront := c.Value
+
+		log.Println(tokenFront)
+		log.Println(token)
+
+		if tokenFront[:strings.IndexByte(tokenFront, '.')] != token[:strings.IndexByte(token, '.')] {
+			return ctx.JSON(http.StatusBadRequest, "Wrong Token")
 		}
 
 		return next(ctx)
 	}
 }
+

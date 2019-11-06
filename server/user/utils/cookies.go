@@ -17,17 +17,15 @@ var SessionsStore = sessions.NewCookieStore(
 
 // SetCookie - set cookie with necessary data
 func SetCookie(ctx echo.Context, userInfo model.User) error {
-	session, err := SessionsStore.Get(ctx.Request(), "session_token")
-	if err != nil {
-		return err
-	}
+	session, _ := SessionsStore.Get(ctx.Request(), "session_token")
 
 	session.Values["id"] = userInfo.ID
 	session.Values["username"] = userInfo.Username
 	session.Values["avatar"] = userInfo.Avatar
 
-	err = session.Save(ctx.Request(), ctx.Response())
+	err := session.Save(ctx.Request(), ctx.Response())
 	if err != nil {
+		log.Println("maybe here")
 		return err
 	}
 	return nil

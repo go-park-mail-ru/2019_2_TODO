@@ -6,14 +6,16 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"server/middlewares"
 	"server/model"
 	"server/user"
 	"server/user/utils"
+	"server/middlewares"
 
 	"github.com/labstack/echo"
 	"github.com/microcosm-cc/bluemonday"
 )
+
+var sanitizer = bluemonday.UGCPolicy()
 
 // Handlers - use UserCRUD
 type Handlers struct {
@@ -43,8 +45,10 @@ func (h *Handlers) handleSignUp(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, "")
 	}
 
-	sanitizer := bluemonday.UGCPolicy()
 	newUserInput.Username = sanitizer.Sanitize(newUserInput.Username)
+
+	newUserInput.Password = base64.StdEncoding.EncodeToString(
+                utils.ConvertPass(newUserInput.Password))
 
 	newUserInput.Avatar = "/images/avatar.png"
 
@@ -60,16 +64,14 @@ func (h *Handlers) handleSignUp(ctx echo.Context) error {
 		ctx.JSON(http.StatusInternalServerError, "Cookie set error")
 	}
 
-	t, err := utils.SetToken(ctx)
+	err = utils.SetToken(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, "Token set error")
 	}
 
 	log.Println(newUserInput.Username)
 
-	return ctx.JSON(http.StatusOK, echo.Map{
-		"csrf-token": t,
-	})
+	return nil
 }
 
 func (h *Handlers) handleSignIn(ctx echo.Context) error {
@@ -80,11 +82,9 @@ func (h *Handlers) handleSignIn(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, "")
 	}
 
-	sanitizer := bluemonday.UGCPolicy()
 	authCredentials.Username = sanitizer.Sanitize(authCredentials.Username)
 
 	userRecord, err := h.Users.SelectDataByLogin(authCredentials.Username)
-
 	if err != nil {
 		return ctx.JSON(http.StatusUnauthorized, "No such user!")
 	}
@@ -99,17 +99,16 @@ func (h *Handlers) handleSignIn(ctx echo.Context) error {
 		" Avatar - ", userRecord.Avatar)
 
 	if err = utils.SetCookie(ctx, *userRecord); err != nil {
+		log.Println(userRecord)
 		ctx.JSON(http.StatusInternalServerError, "Cookie set error")
 	}
 
-	t, err := utils.SetToken(ctx)
+	err = utils.SetToken(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, "Token set error")
 	}
 
-	return ctx.JSON(http.StatusOK, echo.Map{
-		"csrf-token": t,
-	})
+	return nil
 }
 
 func (h *Handlers) handleSignInGet(ctx echo.Context) error {
@@ -158,6 +157,9 @@ func (h *Handlers) handleChangeProfile(ctx echo.Context) error {
 
 	if changeProfileCredentials.Password == "" {
 		changeProfileCredentials.Password = oldData.Password
+	} else {
+		changeProfileCredentials.Password = base64.StdEncoding.EncodeToString(
+                utils.ConvertPass(changeProfileCredentials.Password))
 	}
 
 	affected, err := h.Users.Update(changeProfileCredentials)
