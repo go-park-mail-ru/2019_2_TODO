@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/gorilla/sessions"
@@ -70,20 +71,31 @@ func (tk *JwtToken) parseSecretGetter(token *jwt.Token) (interface{}, error) {
 }
 
 // SetToken - set and sign token and return token and error
-func SetToken(ctx echo.Context) (string, error) {
+func SetToken(ctx echo.Context) error {
 	session, err := SessionsStore.Get(ctx.Request(), "session_token")
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	token, err := NewJwtToken(Secret)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	t, err := token.Create(session, time.Now().Add(time.Hour*72).Unix())
+	expiresAt := int64(60 * 360)
+
+	t, err := token.Create(session, expiresAt)
 	if err != nil {
-		return "", err
+		return err
 	}
-	return t, nil
+
+	cookie := &http.Cookie{
+		Name:    "Csrf-Token",
+		Value:   t,
+		Expires: time.Now().AddDate(0, 0, 1),
+	}
+
+	ctx.SetCookie(cookie)
+
+	return nil
 }
