@@ -21,7 +21,6 @@ func SetCookie(ctx echo.Context, userInfo model.User) error {
 	if err != nil {
 		return err
 	}
-
 	session.Values["id"] = userInfo.ID
 	session.Values["username"] = userInfo.Username
 	session.Values["avatar"] = userInfo.Avatar

@@ -78,8 +78,7 @@ func (h *Handlers) handleSignIn(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, "")
 	}
 
-	sanitizer := bluemonday.UGCPolicy()
-	authCredentials.Username = sanitizer.Sanitize(authCredentials.Username)
+	authCredentials.Username = utils.Sanitizer.Sanitize(authCredentials.Username)
 
 	userRecord, err := h.Users.SelectDataByLogin(authCredentials.Username)
 
@@ -127,6 +126,7 @@ func (h *Handlers) handleSignInGet(ctx echo.Context) error {
 }
 
 func (h *Handlers) handleOk(ctx echo.Context) error {
+	utils.ClearCookie(ctx)
 	return nil
 }
 

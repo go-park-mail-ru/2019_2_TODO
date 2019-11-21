@@ -1,5 +1,7 @@
 package utils
 
+import "github.com/microcosm-cc/bluemonday"
+
 const (
 	FrontIP        = "http://93.171.139.195:780"
 	BackIP         = "http://93.171.139.196:780"
@@ -8,3 +10,5 @@ const (
 	PathToImages   = `/root/golang/server_with_db/2019_2_TODO/server/`
 	Secret         = `askhgashjasl;hjaojgh;asjha;shm;`
 )
+
+var Sanitizer = bluemonday.UGCPolicy()
