@@ -1,6 +1,8 @@
 package core
 
 import (
+	"log"
+
 	"github.com/gorilla/websocket"
 )
 
@@ -18,7 +20,11 @@ func (pc *playerConn) receiver() {
 			break
 		}
 		// execute a command
-		pc.Command(string(command))
+		// pc.Command(string(command))
+		log.Print("Command: '", string(command), "' received by player: ", pc.Player.Name)
+		if string(command) == "ready" {
+			pc.room.RoomReadyCounter++
+		}
 		// update all conn
 		pc.room.UpdateAll <- true
 	}

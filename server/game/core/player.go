@@ -3,9 +3,11 @@ package core
 import (
 	"log"
 	"server/game/hand"
+	"sync"
 )
 
 var IDplayer int32 = 0
+var mutex = &sync.Mutex{}
 
 type Player struct {
 	ID    int32
@@ -47,11 +49,13 @@ type Msg struct {
 }
 
 func (p *Player) GetState() *jsonMsg {
+	mutex.Lock()
 	msg := &jsonMsg{
 		ID:       p.ID,
 		Username: p.Name,
 		Score:    p.Chips,
 	}
+	mutex.Unlock()
 	return msg
 }
 
