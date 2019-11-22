@@ -12,7 +12,8 @@ var FreeRooms = make(map[string]*Room)
 var RoomsCount int
 
 type Room struct {
-	Name string
+	Name             string
+	RoomReadyCounter int32
 
 	// Registered connections.
 	PlayerConns map[*playerConn]bool
@@ -39,14 +40,14 @@ func (r *Room) run() {
 			if len(r.PlayerConns) == 2 {
 				delete(FreeRooms, r.Name)
 				// pair players
-				deck := hand.NewDeck()
-				var p []*Player
-				for k, _ := range r.PlayerConns {
-					p = append(p, k.Player)
-				}
-				p[0].Hand = deck.Draw(2)
-				p[1].Hand = deck.Draw(2)
-				PairPlayers(p[0], p[1])
+				// deck := hand.NewDeck()
+				// var p []*Player
+				// for k, _ := range r.PlayerConns {
+				// 	p = append(p, k.Player)
+				// }
+				// p[0].Hand = deck.Draw(2)
+				// p[1].Hand = deck.Draw(2)
+				// PairPlayers(p[0], p[1])
 			}
 
 		case c := <-r.Leave:
@@ -57,7 +58,22 @@ func (r *Room) run() {
 				goto Exit
 			}
 		case <-r.UpdateAll:
-			// r.updateAllPlayers()
+			if r.RoomReadyCounter == 2 {
+				log.Println("Ready")
+				players := []*playerConn{}
+				for player := range r.PlayerConns {
+					players = append(players, player)
+				}
+				game := &Game{
+					Players:       players,
+					TableCards:    []hand.Card{},
+					Bank:          0,
+					Dealer:        0,
+					MinBet:        20,
+					PlayerCounter: 0,
+				}
+				game.StartGame()
+			}
 		}
 	}
 
@@ -84,11 +100,12 @@ func NewRoom(name string) *Room {
 	}
 
 	room := &Room{
-		Name:        name,
-		PlayerConns: make(map[*playerConn]bool),
-		UpdateAll:   make(chan bool),
-		Join:        make(chan *playerConn),
-		Leave:       make(chan *playerConn),
+		Name:             name,
+		RoomReadyCounter: 0,
+		PlayerConns:      make(map[*playerConn]bool),
+		UpdateAll:        make(chan bool),
+		Join:             make(chan *playerConn),
+		Leave:            make(chan *playerConn),
 	}
 
 	AllRooms[name] = room

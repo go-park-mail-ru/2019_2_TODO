@@ -10,12 +10,13 @@ var IDplayer int32 = 0
 type Player struct {
 	ID    int32
 	Name  string
-	Chips int32
+	Chips int
 	Hand  []hand.Card
+	Bet   int
 	Enemy *Player
 }
 
-func NewPlayer(name string, chips int32) *Player {
+func NewPlayer(name string, chips int) *Player {
 	player := &Player{ID: IDplayer, Name: name, Chips: chips}
 	IDplayer++
 	return player
@@ -39,7 +40,7 @@ func (p *Player) Command(command string) {
 type jsonMsg struct {
 	ID       int32  `json:"id"`
 	Username string `json:"username"`
-	Score    int32  `json:"score"`
+	Score    int    `json:"score"`
 }
 
 type Msg struct {
