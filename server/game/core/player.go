@@ -1,12 +1,14 @@
 package core
 
 import (
-	"fmt"
 	"log"
 	"server/game/hand"
 )
 
+var IDplayer int32 = 0
+
 type Player struct {
+	ID    int32
 	Name  string
 	Chips int32
 	Hand  []hand.Card
@@ -14,7 +16,8 @@ type Player struct {
 }
 
 func NewPlayer(name string, chips int32) *Player {
-	player := &Player{Name: name, Chips: chips}
+	player := &Player{ID: IDplayer, Name: name, Chips: chips}
+	IDplayer++
 	return player
 }
 
@@ -33,10 +36,23 @@ func (p *Player) Command(command string) {
 	}
 }
 
-func (p *Player) GetState() string {
-	return "Game state for Player: " + p.Name +
-		"\nGame chips: " + fmt.Sprint(p.Chips) +
-		"\nHand: " + fmt.Sprint(p.Hand)
+type jsonMsg struct {
+	ID       int32  `json:"id"`
+	Username string `json:"username"`
+	Score    int32  `json:"score"`
+}
+
+type Msg struct {
+	Command map[string]*jsonMsg
+}
+
+func (p *Player) GetState() *jsonMsg {
+	msg := &jsonMsg{
+		ID:       p.ID,
+		Username: p.Name,
+		Score:    p.Chips,
+	}
+	return msg
 }
 
 func (p *Player) GiveUp() {

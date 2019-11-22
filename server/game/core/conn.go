@@ -26,10 +26,31 @@ func (pc *playerConn) receiver() {
 	pc.ws.Close()
 }
 
-func (pc *playerConn) sendState() {
+func (pc *playerConn) sendState(command string) {
 	go func() {
-		msg := pc.GetState()
-		err := pc.ws.WriteMessage(websocket.TextMessage, []byte(msg))
+		msgState := pc.GetState()
+		var cmd = make(map[string]*jsonMsg)
+		cmd[command] = msgState
+		msg := &Msg{
+			Command: cmd,
+		}
+		err := pc.ws.WriteJSON(msg)
+		if err != nil {
+			pc.room.Leave <- pc
+			pc.ws.Close()
+		}
+	}()
+}
+
+func (pc *playerConn) sendNewPlayer(player *playerConn) {
+	go func() {
+		msgState := player.GetState()
+		var cmd = make(map[string]*jsonMsg)
+		cmd["addPlayer"] = msgState
+		msg := &Msg{
+			Command: cmd,
+		}
+		err := pc.ws.WriteJSON(msg)
 		if err != nil {
 			pc.room.Leave <- pc
 			pc.ws.Close()

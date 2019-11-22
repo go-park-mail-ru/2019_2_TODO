@@ -33,7 +33,7 @@ func (r *Room) run() {
 		select {
 		case c := <-r.Join:
 			r.PlayerConns[c] = true
-			r.updateAllPlayers()
+			r.updateAllPlayers(c)
 
 			// if room is full - delete from freeRooms
 			if len(r.PlayerConns) == 2 {
@@ -51,13 +51,13 @@ func (r *Room) run() {
 
 		case c := <-r.Leave:
 			c.GiveUp()
-			r.updateAllPlayers()
+			// r.updateAllPlayers()
 			delete(r.PlayerConns, c)
 			if len(r.PlayerConns) == 0 {
 				goto Exit
 			}
 		case <-r.UpdateAll:
-			r.updateAllPlayers()
+			// r.updateAllPlayers()
 		}
 	}
 
@@ -70,9 +70,11 @@ Exit:
 	log.Print("Room closed:", r.Name)
 }
 
-func (r *Room) updateAllPlayers() {
+func (r *Room) updateAllPlayers(conn *playerConn) {
 	for c := range r.PlayerConns {
-		c.sendState()
+		if conn != c {
+			c.sendNewPlayer(conn)
+		}
 	}
 }
 
