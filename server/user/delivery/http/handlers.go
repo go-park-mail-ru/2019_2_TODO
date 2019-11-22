@@ -5,12 +5,15 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
+	"server/game/core"
 	"server/middlewares"
 	"server/model"
 	"server/user"
 	"server/user/utils"
 
+	"github.com/gorilla/websocket"
 	"github.com/labstack/echo"
 	"github.com/microcosm-cc/bluemonday"
 )
@@ -28,12 +31,51 @@ func NewUserHandler(e *echo.Echo, us user.Usecase) {
 	e.GET("/signin/", handlers.handleSignInGet)
 	e.GET("/signin/profile/", handlers.handleGetProfile)
 	e.GET("/logout/", handlers.handleLogout)
+	e.GET("/multiplayer/", handlers.wsHandler)
 
 	e.POST("/signup/", handlers.handleSignUp)
 	e.POST("/signin/", handlers.handleSignIn)
 	e.POST("/signin/profile/", handlers.handleChangeProfile, middlewares.JWTMiddlewareCustom)
 	e.POST("/signin/profileImage/", handlers.handleChangeImage, middlewares.JWTMiddlewareCustom)
 
+}
+
+func (h *Handlers) wsHandler(ctx echo.Context) error {
+	ws, err := websocket.Upgrade(ctx.Response(), ctx.Request(), nil, 1024, 1024)
+	if _, ok := err.(websocket.HandshakeError); ok {
+		http.Error(ctx.Response(), "Not a websocket handshake", 400)
+		return err
+	} else if err != nil {
+		return err
+	}
+
+	playerName := "Player"
+	var playerStartChips int32 = 1000
+	params, _ := url.ParseQuery(ctx.Request().URL.RawQuery)
+	if len(params["name"]) > 0 {
+		playerName = params["name"][0]
+	}
+
+	// Get or create a room
+	var room *core.Room
+	if len(core.FreeRooms) > 0 {
+		for _, r := range core.FreeRooms {
+			room = r
+			break
+		}
+	} else {
+		room = core.NewRoom("")
+	}
+
+	// Create Player and Conn
+	player := core.NewPlayer(playerName, playerStartChips)
+	pConn := core.NewPlayerConn(ws, player, room)
+	// Join Player to room
+	room.Join <- pConn
+
+	log.Printf("Player: %s has joined to room: %s", pConn.Name, room.Name)
+
+	return nil
 }
 
 func (h *Handlers) handleSignUp(ctx echo.Context) error {
