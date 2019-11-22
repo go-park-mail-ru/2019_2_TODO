@@ -19,7 +19,7 @@ type Player struct {
 }
 
 func NewPlayer(name string, chips int) *Player {
-	player := &Player{ID: IDplayer, Name: name, Chips: chips}
+	player := &Player{ID: IDplayer, Name: name, Chips: chips, Hand: []hand.Card{}}
 	IDplayer++
 	return player
 }
@@ -40,9 +40,10 @@ func (p *Player) Command(command string) {
 }
 
 type jsonMsg struct {
-	ID       int32  `json:"id"`
-	Username string `json:"username"`
-	Score    int    `json:"score"`
+	ID       int32       `json:"id"`
+	Username string      `json:"username"`
+	Score    int         `json:"score"`
+	Hand     []hand.Card `json:"hand"`
 }
 
 type Msg struct {
@@ -50,13 +51,12 @@ type Msg struct {
 }
 
 func (p *Player) GetState() *jsonMsg {
-	mutex.Lock()
 	msg := &jsonMsg{
 		ID:       p.ID,
 		Username: p.Name,
 		Score:    p.Chips,
+		Hand:     p.Hand,
 	}
-	mutex.Unlock()
 	return msg
 }
 
