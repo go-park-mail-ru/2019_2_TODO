@@ -21,7 +21,7 @@ func (pc *playerConn) receiver() {
 		}
 		// execute a command
 		log.Print("Command: '", string(command), "' received by player: ", pc.Player.Name)
-		if string(command) == "Ready" {
+		if string(command) == "ready" {
 			pc.room.RoomReadyCounter++
 		}
 		// update all conn

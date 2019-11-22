@@ -50,7 +50,7 @@ func (h *Handlers) wsHandler(ctx echo.Context) error {
 	}
 
 	playerName := "Player"
-	var playerStartChips int32 = 1000
+	var playerStartChips int = 1000
 	params, _ := url.ParseQuery(ctx.Request().URL.RawQuery)
 	if len(params["name"]) > 0 {
 		playerName = params["name"][0]
