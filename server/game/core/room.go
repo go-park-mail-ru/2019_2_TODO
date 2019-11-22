@@ -3,7 +3,7 @@ package core
 import (
 	"log"
 
-	"server/game/hand"
+	// "server/game/hand"
 	"server/game/utils"
 )
 
@@ -13,6 +13,7 @@ var RoomsCount int
 
 type Room struct {
 	Name string
+	RoomReadyCounter int32
 
 	// Registered connections.
 	PlayerConns map[*playerConn]bool
@@ -33,20 +34,22 @@ func (r *Room) run() {
 		select {
 		case c := <-r.Join:
 			r.PlayerConns[c] = true
+			c.sendState("addPlayer")
 			r.updateAllPlayers(c)
+			r.updateLastPlayer(c)
 
 			// if room is full - delete from freeRooms
 			if len(r.PlayerConns) == 2 {
 				delete(FreeRooms, r.Name)
 				// pair players
-				deck := hand.NewDeck()
+				/*deck := hand.NewDeck()
 				var p []*Player
 				for k, _ := range r.PlayerConns {
 					p = append(p, k.Player)
 				}
 				p[0].Hand = deck.Draw(2)
 				p[1].Hand = deck.Draw(2)
-				PairPlayers(p[0], p[1])
+				PairPlayers(p[0], p[1])*/
 			}
 
 		case c := <-r.Leave:
@@ -57,7 +60,9 @@ func (r *Room) run() {
 				goto Exit
 			}
 		case <-r.UpdateAll:
-			// r.updateAllPlayers()
+			if r.RoomReadyCounter == 2 {
+				log.Println("All Players Ready")
+			}
 		}
 	}
 
@@ -72,8 +77,18 @@ Exit:
 
 func (r *Room) updateAllPlayers(conn *playerConn) {
 	for c := range r.PlayerConns {
+		log.Println(conn.GetState())
+		log.Println(c.GetState())
 		if conn != c {
 			c.sendNewPlayer(conn)
+		}
+	}
+}
+
+func (r *Room) updateLastPlayer(conn *playerConn) {
+	for c := range r.PlayerConns {
+		if conn != c {
+			conn.sendNewPlayer(c)
 		}
 	}
 }
@@ -85,6 +100,7 @@ func NewRoom(name string) *Room {
 
 	room := &Room{
 		Name:        name,
+		RoomReadyCounter: 0,
 		PlayerConns: make(map[*playerConn]bool),
 		UpdateAll:   make(chan bool),
 		Join:        make(chan *playerConn),
