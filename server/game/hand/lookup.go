@@ -254,9 +254,6 @@ func (table *lookupTable) multiples() {
 	}
 }
 
-// LexographicallyNextBitSequence calculates the next permutation of
-// bits in a lexicographical sense. The algorithm comes from
-// https://graphics.stanford.edu/~seander/bithacks.html#NextBitPermutation.
 func lexographicallyNextBitSequence(bits int32) int32 {
 	t := (bits | (bits - 1)) + 1
 	return t | ((((t & -t) / (bits & -bits)) >> 1) - 1)
