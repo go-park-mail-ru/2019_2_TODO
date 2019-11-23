@@ -14,16 +14,16 @@ type Room struct {
 	Name string
 
 	// Registered connections.
-	userConns map[*userConn]bool
+	UserConns map[*UserConn]bool
 
 	// Update state for all conn.
-	updateAll chan *userConn
+	updateAll chan *UserConn
 
 	// Register requests from the connections.
-	Join chan *userConn
+	Join chan *UserConn
 
 	// Unregister requests from connections.
-	Leave chan *userConn
+	Leave chan *UserConn
 }
 
 // Run the Room in goroutine
@@ -31,20 +31,24 @@ func (r *Room) run() {
 	for {
 		select {
 		case c := <-r.Join:
-			r.userConns[c] = true
+			r.UserConns[c] = true
 			c.Online = true
-			c.sendStartChat()
-
+			c.sendStartChat(c)
+			for user := range r.UserConns {
+				if user != c {
+					user.sendStartChat(c)
+				}
+			}
 			// if Room is full - delete from freeRooms
-			if len(r.userConns) == 2 {
+			if len(r.UserConns) == 2 {
 				delete(FreeRooms, r.Name)
 			}
 
 		case c := <-r.Leave:
 			c.Online = false
 			c.LeaveRoom()
-			delete(r.userConns, c)
-			if len(r.userConns) == 0 {
+			delete(r.UserConns, c)
+			if len(r.UserConns) == 0 {
 				goto Exit
 			}
 		case c := <-r.updateAll:
@@ -61,8 +65,8 @@ Exit:
 	log.Print("Room closed:", r.Name)
 }
 
-func (r *Room) updateAllPlayers(conn *userConn) {
-	for c := range r.userConns {
+func (r *Room) updateAllPlayers(conn *UserConn) {
+	for c := range r.UserConns {
 		c.sendMsgToUsers(conn)
 	}
 }
@@ -74,10 +78,10 @@ func NewRoom(name string) *Room {
 
 	Room := &Room{
 		Name:      name,
-		userConns: make(map[*userConn]bool),
-		updateAll: make(chan *userConn),
-		Join:      make(chan *userConn),
-		Leave:     make(chan *userConn),
+		UserConns: make(map[*UserConn]bool),
+		updateAll: make(chan *UserConn),
+		Join:      make(chan *UserConn),
+		Leave:     make(chan *UserConn),
 	}
 
 	AllRooms[name] = Room

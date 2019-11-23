@@ -2,10 +2,10 @@ package main
 
 import (
 	"chat/chatLink/core"
-	"html/template"
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo"
@@ -17,13 +17,19 @@ const (
 	FrontIP        = "localhost"
 )
 
-func homeHandler(ctx echo.Context) {
-	var homeTempl = template.Must(template.ParseFiles("templates/chat.html"))
-	data := struct {
-		Host       string
-		RoomsCount int
-	}{ctx.Request().Host, core.RoomsCount}
-	homeTempl.Execute(ctx.Response(), data)
+type JSONRooms struct {
+	Rooms []string `json:"rooms"`
+}
+
+func getRooms(ctx echo.Context) error {
+	var rooms = []string{}
+	for r := range core.AllRooms {
+		rooms = append(rooms, r)
+	}
+	var jsonRooms = &JSONRooms{
+		Rooms: rooms,
+	}
+	return ctx.JSON(http.StatusOK, jsonRooms)
 }
 
 func wsHandler(ctx echo.Context) {
@@ -35,7 +41,7 @@ func wsHandler(ctx echo.Context) {
 		return
 	}
 
-	username := "User"
+	username := "User" + strconv.Itoa(int(core.IDUser))
 	params, _ := url.ParseQuery(ctx.Request().URL.RawQuery)
 	if len(params["name"]) > 0 {
 		username = params["name"][0]
@@ -49,10 +55,10 @@ func wsHandler(ctx echo.Context) {
 			break
 		}
 	} else {
-		room = core.NewRoom("")
+		room = core.NewRoom(username)
 	}
 
-	// Create Player and Conn
+	// Create User and Conn
 	user := core.NewUser(username, false)
 	uConn := core.NewUserConn(ws, user, room)
 	// Join Player to room
@@ -74,10 +80,11 @@ func main() {
 		AllowCredentials: true,
 	}))
 
-	e.GET("/", func(ctx echo.Context) error {
-		homeHandler(ctx)
+	e.GET("getRooms", func(ctx echo.Context) error {
+		getRooms(ctx)
 		return nil
 	})
+
 	e.GET("/chatRoom/", func(ctx echo.Context) error {
 		wsHandler(ctx)
 		return nil

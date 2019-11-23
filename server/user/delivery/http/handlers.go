@@ -156,9 +156,18 @@ func (h *Handlers) handleSignInGet(ctx echo.Context) error {
 	log.Println(cookieUsername + " " + cookieAvatar)
 
 	if cookieUsername != "" {
-		cookieUsernameInput := model.User{
-			Username: cookieUsername,
-			Avatar:   utils.BackIP + cookieAvatar,
+		cookieUsernameInput := model.User{}
+		if cookieUsername == "ADMIN" {
+			cookieUsernameInput = model.User{
+				Username: cookieUsername,
+				Avatar:   utils.BackIP + cookieAvatar,
+				Admin:    true,
+			}
+		} else {
+			cookieUsernameInput = model.User{
+				Username: cookieUsername,
+				Avatar:   utils.BackIP + cookieAvatar,
+			}
 		}
 		log.Println(cookieUsernameInput)
 		return ctx.JSON(http.StatusCreated, cookieUsernameInput)

@@ -8,14 +8,14 @@ import (
 
 var mutex = &sync.Mutex{}
 
-type userConn struct {
+type UserConn struct {
 	ws *websocket.Conn
 	*User
 	room *Room
 }
 
 // Receive msg from ws in goroutine
-func (uc *userConn) receiver() {
+func (uc *UserConn) receiver() {
 	for {
 		_, command, err := uc.ws.ReadMessage()
 		if err != nil {
@@ -30,7 +30,7 @@ func (uc *userConn) receiver() {
 	uc.ws.Close()
 }
 
-func (uc *userConn) sendMsgToUsers(user *userConn) {
+func (uc *UserConn) sendMsgToUsers(user *UserConn) {
 	go func() {
 		msg := user.UserGetMessage()
 		mutex.Lock()
@@ -43,20 +43,20 @@ func (uc *userConn) sendMsgToUsers(user *userConn) {
 	}()
 }
 
-func (uc *userConn) sendStartChat() {
+func (uc *UserConn) sendStartChat(user *UserConn) {
 	msg := &Message{
 		Autor: uc.Msg.Autor,
 		Body:  "Joined Room",
 	}
-	err := uc.ws.WriteJSON(msg)
+	err := user.ws.WriteJSON(msg)
 	if err != nil {
 		uc.room.Leave <- uc
 		uc.ws.Close()
 	}
 }
 
-func NewUserConn(ws *websocket.Conn, user *User, room *Room) *userConn {
-	uc := &userConn{ws, user, room}
+func NewUserConn(ws *websocket.Conn, user *User, room *Room) *UserConn {
+	uc := &UserConn{ws, user, room}
 	go uc.receiver()
 	return uc
 }
