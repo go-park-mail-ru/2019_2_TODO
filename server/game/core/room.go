@@ -57,6 +57,7 @@ func (r *Room) run() {
 				players := []*playerConn{}
 				for player := range r.PlayerConns {
 					players = append(players, player)
+					player.sendState("startGame")
 				}
 				game := &Game{
 					Players:       players,
@@ -85,7 +86,7 @@ func (r *Room) updateAllPlayers(conn *playerConn) {
 		log.Println(conn.GetState())
 		log.Println(c.GetState())
 		if conn != c {
-			c.sendNewPlayer(conn)
+			c.sendNewPlayer(conn, "addPlayer")
 		}
 	}
 }
@@ -93,7 +94,7 @@ func (r *Room) updateAllPlayers(conn *playerConn) {
 func (r *Room) updateLastPlayer(conn *playerConn) {
 	for c := range r.PlayerConns {
 		if conn != c {
-			conn.sendNewPlayer(c)
+			conn.sendNewPlayer(c, "addPlayer")
 		}
 	}
 }

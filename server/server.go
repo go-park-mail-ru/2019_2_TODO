@@ -22,7 +22,7 @@ func main() {
 	}))
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins:     []string{utils.FrontIP},
+		AllowOrigins:     []string{utils.FrontIP, utils.FrontIPChat},
 		AllowMethods:     []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
 		AllowCredentials: true,
 	}))
