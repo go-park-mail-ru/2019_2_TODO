@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        .chat {
+            display: flex;
+            flex-direction: column;
+            background: darkslategray;
+            width: 400px;
+            padding: 5px;
+            border-radius: 5px;
+        }
+
+        .textWindow {
+            height: 600px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .input {
+            border-radius: 5px;
+            /*height: 100px;*/
+            border: none;
+            width: 90%;
+        }
+
+        .input:focus {
+            outline: none;
+        }
+
+        .button {
+            border-radius: 5px;
+            width: 10%;
+            border: none;
+            height: 40px;
+            width: 100px;
+            z-index: 5;
+            background: none;
+        }
+
+        .inputContainer {
+            padding-left: 5px;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: row;
+            background: white;
+        }
+    </style>
+</head>
+<body>
+<div id="chat" class="chat"></div>
+<script>
+  const socket = new WebSocket('ws://localhost:8080/chatRoom/');
+  const app = document.getElementById('chat');
+  const textWindow = document.createElement('textarea');
+  textWindow.className = 'textWindow';
+  textWindow.id = 'textWindow';
+  socket.onmessage = (msg) => {
+      const data = JSON.parse(msg.data);
+    textWindow.textContent += `${data.author}: ${data.body}\n`;
+  };
+  app.appendChild(textWindow);
+  const inputContainer = document.createElement('div');
+  inputContainer.className = 'inputContainer';
+  const input = document.createElement('input');
+  input.className = 'input';
+  const submitButton = document.createElement('button');
+  submitButton.className = 'button';
+  submitButton.textContent = 'Отправить';
+  submitButton.type = 'submit';
+  inputContainer.appendChild(input);
+  inputContainer.appendChild(submitButton);
+  submitButton.addEventListener('click', (event) => {
+    event.preventDefault();
+    socket.send(input.value);
+    input.value = '';
+  });
+  app.appendChild(inputContainer);
+</script>
+<!--<div style="-->
+<!--    display: flex;-->
+<!--    flex-direction: column;-->
+<!--    background: aqua;-->
+<!--    width: 400px;-->
+<!--    padding: 5px;-->
+<!--    border-radius: 5px;-->
+<!--">-->
+<!--        <textarea style="height: 600px">-->
+<!--        </textarea>-->
+<!--    <input id="input" type="text" style="display: flex; flex-direction: row; justify-content: flex-end; align-items: flex-end; height: 100px">-->
+<!--        <button style="width: 100px">-->
+<!--            Отправить-->
+<!--        </button>-->
+<!--    </input>-->
+<!--</div>-->
+</body>
+</html>
