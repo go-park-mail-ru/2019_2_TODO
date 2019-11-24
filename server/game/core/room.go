@@ -58,6 +58,16 @@ func (r *Room) run() {
 			if r.RoomStartGame {
 				r.updateAllPlayers(c, Command)
 				r.Game.PlayerCounterChange()
+				if r.Game.PlayerCounter == r.Game.Dealer {
+					r.Game.StageCounterChange()
+					if r.Game.StageCounter == 1 {
+						r.updateTableCards(c, "showTableCards", 3)
+					} else if r.Game.StageCounter == 2 {
+						r.updateTableCards(c, "showTableCards", 4)
+					} else if r.Game.StageCounter == 3 {
+						r.updateTableCards(c, "showTableCards", 5)
+					}
+				}
 				r.updateAllPlayers(r.Game.Players[r.Game.PlayerCounter], "enablePlayer")
 			}
 			if r.RoomReadyCounter == 2 && !r.RoomStartGame {
@@ -74,6 +84,7 @@ func (r *Room) run() {
 					Dealer:        0,
 					MinBet:        20,
 					PlayerCounter: 0,
+					StageCounter:  0,
 				}
 				r.Game.StartGame()
 				r.Game.MaxBet = r.Game.MinBet * 2
@@ -97,6 +108,12 @@ func (r *Room) updateAllPlayersExceptYou(conn *playerConn, command string) {
 		if conn != c {
 			c.sendNewPlayer(conn, command)
 		}
+	}
+}
+
+func (r *Room) updateTableCards(conn *playerConn, command string, numberCards int) {
+	for c := range r.PlayerConns {
+		c.sendTableCards("showTableCards", numberCards)
 	}
 }
 

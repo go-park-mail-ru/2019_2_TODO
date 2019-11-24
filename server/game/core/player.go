@@ -5,11 +5,9 @@ import (
 	"server/game/hand"
 	"strconv"
 	"strings"
-	"sync"
 )
 
 var IDplayer int32 = 0
-var mutex = &sync.Mutex{}
 
 type jsonMsg struct {
 	ID       int32       `json:"id"`

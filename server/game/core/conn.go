@@ -2,6 +2,7 @@ package core
 
 import (
 	"log"
+	"server/game/hand"
 
 	"github.com/gorilla/websocket"
 )
@@ -40,9 +41,7 @@ func (pc *playerConn) sendState(command string) {
 	msg := &Msg{
 		Command: cmd,
 	}
-	mutex.Lock()
 	err := pc.ws.WriteJSON(msg)
-	mutex.Unlock()
 	if err != nil {
 		pc.Room.Leave <- pc
 		pc.ws.Close()
@@ -56,9 +55,38 @@ func (pc *playerConn) sendNewPlayer(player *playerConn, command string) {
 	msg := &Msg{
 		Command: cmd,
 	}
-	mutex.Lock()
 	err := pc.ws.WriteJSON(msg)
-	mutex.Unlock()
+	if err != nil {
+		pc.Room.Leave <- pc
+		pc.ws.Close()
+	}
+}
+
+type TableJSON struct {
+	Command string      `json:"Command"`
+	Indexes []int       `json:"indexex"`
+	Cards   []hand.Card `json:"cards"`
+}
+
+type TableCardMsg struct {
+	Command map[string]*TableJSON
+}
+
+func (pc *playerConn) sendTableCards(command string, numberCards int) {
+	indexes := []int{}
+	for i := 0; i < numberCards-1; i++ {
+		indexes = append(indexes, i)
+	}
+	tableJSON := &TableJSON{
+		Indexes: indexes,
+		Cards:   pc.Room.Game.TableCards[:numberCards-1],
+	}
+	var cmd = make(map[string]*TableJSON)
+	cmd[command] = tableJSON
+	tableCardMsg := &TableCardMsg{
+		Command: cmd,
+	}
+	err := pc.ws.WriteJSON(tableCardMsg)
 	if err != nil {
 		pc.Room.Leave <- pc
 		pc.ws.Close()

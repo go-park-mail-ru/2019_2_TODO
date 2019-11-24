@@ -10,6 +10,7 @@ type Game struct {
 	MinBet        int
 	PlayerCounter int
 	MaxBet        int
+	StageCounter  int
 }
 
 func (game *Game) StartGame() {
@@ -28,6 +29,10 @@ func (game *Game) StartGame() {
 
 func (game *Game) DealerChange() {
 	game.Dealer = (game.Dealer + 1) % len(game.Players)
+}
+
+func (game *Game) StageCounterChange() {
+	game.StageCounter = (game.StageCounter + 1) % 4
 }
 
 func (game *Game) PlayerCounterChange() {
