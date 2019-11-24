@@ -55,8 +55,8 @@ func (r *Room) run() {
 			}
 		case c := <-r.UpdateAll:
 			if r.RoomStartGame {
-				r.updateAllPlayers(c, "enablePlayer")
 				r.updateAllPlayers(c, Command)
+				r.updateAllPlayers(c, "enablePlayer")
 			}
 			if r.RoomReadyCounter == 2 && !r.RoomStartGame {
 				log.Println("All Players are Ready")
@@ -76,6 +76,7 @@ func (r *Room) run() {
 				game.StartGame()
 				MaxBet = game.MinBet * 2
 				r.RoomStartGame = true
+				r.updateAllPlayers(c, "enablePlayer")
 			}
 		}
 	}
