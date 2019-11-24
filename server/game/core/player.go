@@ -3,11 +3,24 @@ package core
 import (
 	"log"
 	"server/game/hand"
+	"strconv"
+	"strings"
 	"sync"
 )
 
 var IDplayer int32 = 0
 var mutex = &sync.Mutex{}
+
+type jsonMsg struct {
+	ID       int32       `json:"id"`
+	Username string      `json:"username"`
+	Score    int         `json:"score"`
+	Hand     []hand.Card `json:"hand"`
+}
+
+type Msg struct {
+	Command map[string]*jsonMsg
+}
 
 type Player struct {
 	ID    int32
@@ -15,7 +28,6 @@ type Player struct {
 	Chips int
 	Hand  []hand.Card
 	Bet   int
-	Enemy *Player
 }
 
 func NewPlayer(name string, chips int) *Player {
@@ -24,30 +36,25 @@ func NewPlayer(name string, chips int) *Player {
 	return player
 }
 
-func PairPlayers(p1 *Player, p2 *Player) {
-	p1.Enemy, p2.Enemy = p2, p1
-}
-
-func (p *Player) Command(command string) {
+func (p *Player) Command(command string) string {
 	log.Print("Command: '", command, "' received by player: ", p.Name)
-	if command == "Fold" {
+	if command == "fold" {
+		p.Hand = []hand.Card{}
+	} else if command == "check" {
 
-	} else if command == "Call" {
+	} else if command == "call" {
 
-	} else if command == "Raise" {
-		p.Chips -= 100
+	} else {
+		raiseCommand := strings.Split(command, " ")
+		command = "raise"
+		bet, err := strconv.Atoi(raiseCommand[1])
+		if err != nil {
+			log.Println("error")
+		}
+		p.Bet = bet
+		p.Chips -= bet
 	}
-}
-
-type jsonMsg struct {
-	ID       int32  `json:"id"`
-	Username string `json:"username"`
-	Score    int    `json:"score"`
-	Hand []hand.Card `json:"hand"`
-}
-
-type Msg struct {
-	Command map[string]*jsonMsg
+	return command
 }
 
 func (p *Player) GetState() *jsonMsg {
@@ -55,7 +62,7 @@ func (p *Player) GetState() *jsonMsg {
 		ID:       p.ID,
 		Username: p.Name,
 		Score:    p.Chips,
-		Hand: p.Hand,
+		Hand:     p.Hand,
 	}
 	return msg
 }
