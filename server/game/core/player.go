@@ -3,41 +3,13 @@ package core
 import (
 	"log"
 	"server/game/hand"
+	"strconv"
+	"strings"
 	"sync"
 )
 
 var IDplayer int32 = 0
 var mutex = &sync.Mutex{}
-
-type Player struct {
-	ID    int32
-	Name  string
-	Chips int
-	Hand  []hand.Card
-	Bet   int
-	Enemy *Player
-}
-
-func NewPlayer(name string, chips int) *Player {
-	player := &Player{ID: IDplayer, Name: name, Chips: chips, Hand: []hand.Card{}}
-	IDplayer++
-	return player
-}
-
-func PairPlayers(p1 *Player, p2 *Player) {
-	p1.Enemy, p2.Enemy = p2, p1
-}
-
-func (p *Player) Command(command string) {
-	log.Print("Command: '", command, "' received by player: ", p.Name)
-	if command == "Fold" {
-
-	} else if command == "Call" {
-
-	} else if command == "Raise" {
-		p.Chips -= 100
-	}
-}
 
 type jsonMsg struct {
 	ID       int32       `json:"id"`
@@ -48,6 +20,41 @@ type jsonMsg struct {
 
 type Msg struct {
 	Command map[string]*jsonMsg
+}
+
+type Player struct {
+	ID    int32
+	Name  string
+	Chips int
+	Hand  []hand.Card
+	Bet   int
+}
+
+func NewPlayer(name string, chips int) *Player {
+	player := &Player{ID: IDplayer, Name: name, Chips: chips, Hand: []hand.Card{}}
+	IDplayer++
+	return player
+}
+
+func (p *Player) Command(command string) string {
+	log.Print("Command: '", command, "' received by player: ", p.Name)
+	if command == "fold" {
+		p.Hand = []hand.Card{}
+	} else if command == "check" {
+
+	} else if command == "call" {
+
+	} else {
+		raiseCommand := strings.Split(command, " ")
+		command = "raise"
+		bet, err := strconv.Atoi(raiseCommand[1])
+		if err != nil {
+			log.Println("error")
+		}
+		p.Bet = bet
+		p.Chips -= bet
+	}
+	return command
 }
 
 func (p *Player) GetState() *jsonMsg {

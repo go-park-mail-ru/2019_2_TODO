@@ -10,16 +10,18 @@ import (
 var AllRooms = make(map[string]*Room)
 var FreeRooms = make(map[string]*Room)
 var RoomsCount int
+var Command string
 
 type Room struct {
 	Name             string
 	RoomReadyCounter int32
+	RoomStartGame    bool
 
 	// Registered connections.
 	PlayerConns map[*playerConn]bool
 
 	// Update state for all conn.
-	UpdateAll chan bool
+	UpdateAll chan *playerConn
 
 	// Register requests from the connections.
 	Join chan *playerConn
@@ -34,9 +36,8 @@ func (r *Room) run() {
 		select {
 		case c := <-r.Join:
 			r.PlayerConns[c] = true
-			c.sendState("addPlayer")
-			r.updateAllPlayers(c)
-			r.updateLastPlayer(c)
+			r.updateAllPlayers(c, "addPlayer")
+			r.updateLastPlayer(c, "addPlayer")
 
 			// if room is full - delete from freeRooms
 			if len(r.PlayerConns) == 2 {
@@ -51,8 +52,11 @@ func (r *Room) run() {
 			if len(r.PlayerConns) == 0 {
 				goto Exit
 			}
-		case <-r.UpdateAll:
-			if r.RoomReadyCounter == 2 {
+		case c := <-r.UpdateAll:
+			if r.RoomStartGame {
+				r.updateAllPlayers(c, Command)
+			}
+			if r.RoomReadyCounter == 2 && !r.RoomStartGame {
 				log.Println("All Players are Ready")
 				players := []*playerConn{}
 				for player := range r.PlayerConns {
@@ -68,6 +72,7 @@ func (r *Room) run() {
 					PlayerCounter: 0,
 				}
 				game.StartGame()
+				r.RoomStartGame = true
 			}
 		}
 	}
@@ -81,21 +86,29 @@ Exit:
 	log.Print("Room closed:", r.Name)
 }
 
-func (r *Room) updateAllPlayers(conn *playerConn) {
+func (r *Room) updateAllPlayers(conn *playerConn, command string) {
 	for c := range r.PlayerConns {
-		log.Println(conn.GetState())
-		log.Println(c.GetState())
+		c.sendNewPlayer(conn, command)
+	}
+}
+
+func (r *Room) updateLastPlayer(conn *playerConn, command string) {
+	for c := range r.PlayerConns {
 		if conn != c {
-			c.sendNewPlayer(conn, "addPlayer")
+			conn.sendNewPlayer(c, command)
 		}
 	}
 }
 
-func (r *Room) updateLastPlayer(conn *playerConn) {
-	for c := range r.PlayerConns {
-		if conn != c {
-			conn.sendNewPlayer(c, "addPlayer")
-		}
+func (r *Room) processCommand(command string) {
+	if command == "fold" {
+
+	} else if command == "check" {
+
+	} else if command == "call" {
+
+	} else {
+
 	}
 }
 
@@ -108,7 +121,7 @@ func NewRoom(name string) *Room {
 		Name:             name,
 		RoomReadyCounter: 0,
 		PlayerConns:      make(map[*playerConn]bool),
-		UpdateAll:        make(chan bool),
+		UpdateAll:        make(chan *playerConn),
 		Join:             make(chan *playerConn),
 		Leave:            make(chan *playerConn),
 	}
