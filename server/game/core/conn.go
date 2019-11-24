@@ -63,8 +63,7 @@ func (pc *playerConn) sendNewPlayer(player *playerConn, command string) {
 }
 
 type TableJSON struct {
-	Command string      `json:"Command"`
-	Indexes []int       `json:"indexex"`
+	Indexes []int       `json:"indexes"`
 	Cards   []hand.Card `json:"cards"`
 }
 
