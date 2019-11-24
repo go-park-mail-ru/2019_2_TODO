@@ -69,8 +69,9 @@ func (r *Room) run() {
 					} else if r.Game.StageCounter == 3 {
 						r.updateTableCards(c, "showTableCards", 5)
 					}
-					c.sendState("updatePlayerScore")
-					r.updateAllPlayersExceptYou(c, "updatePlayerScore")
+					for conn := range r.PlayerConns {
+						r.updateAllPlayers(conn, "updatePlayerScore")
+					}
 				}
 				r.updateAllPlayers(r.Game.Players[r.Game.PlayerCounter], "enablePlayer")
 			}
@@ -130,7 +131,7 @@ func (r *Room) updateAllPlayersExceptYou(conn *playerConn, command string) {
 
 func (r *Room) updateTableCards(conn *playerConn, command string, numberCards int) {
 	for c := range r.PlayerConns {
-		c.sendTableCards("showTableCards", numberCards)
+		c.sendTableCards(command, numberCards)
 	}
 }
 
