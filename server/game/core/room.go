@@ -58,6 +58,7 @@ func (r *Room) run() {
 		case c := <-r.UpdateAll:
 			if r.RoomStartGame {
 				r.updateAllPlayers(c, Command)
+				r.game.PlayerCounterChange()
 				r.updateAllPlayers(r.game.Players[r.game.PlayerCounter], "enablePlayer")
 			}
 			if r.RoomReadyCounter == 2 && !r.RoomStartGame {
