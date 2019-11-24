@@ -48,6 +48,22 @@ func (pc *playerConn) sendState(command string) {
 	}
 }
 
+func (pc *playerConn) sendBankState(command string) {
+	msgState := &jsonMsg{
+		Score: pc.Room.Game.Bank,
+	}
+	var cmd = make(map[string]*jsonMsg)
+	cmd[command] = msgState
+	msg := &Msg{
+		Command: cmd,
+	}
+	err := pc.ws.WriteJSON(msg)
+	if err != nil {
+		pc.Room.Leave <- pc
+		pc.ws.Close()
+	}
+}
+
 func (pc *playerConn) sendNewPlayer(player *playerConn, command string) {
 	msgState := player.GetState()
 	var cmd = make(map[string]*jsonMsg)

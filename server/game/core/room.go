@@ -61,7 +61,7 @@ func (r *Room) run() {
 				if r.Game.PlayerCounter == r.Game.Dealer {
 					r.Game.StageCounterChange()
 					r.setBank()
-					r.updateAllPlayers(c, "setBank")
+					r.updateAllPlayersBank("setBank")
 					if r.Game.StageCounter == 1 {
 						r.updateTableCards(c, "showTableCards", 3)
 					} else if r.Game.StageCounter == 2 {
@@ -109,6 +109,12 @@ func (r *Room) setBank() {
 	for c := range r.PlayerConns {
 		r.Game.Bank += c.Player.Bet
 		c.Player.Bet = 0
+	}
+}
+
+func (r *Room) updateAllPlayersBank(command string) {
+	for c := range r.PlayerConns {
+		c.sendBankState(command)
 	}
 }
 
