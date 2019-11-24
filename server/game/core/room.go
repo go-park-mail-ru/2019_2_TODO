@@ -10,6 +10,7 @@ import (
 var AllRooms = make(map[string]*Room)
 var FreeRooms = make(map[string]*Room)
 var RoomsCount int
+var MaxBet int
 var Command string
 
 type Room struct {
@@ -54,6 +55,7 @@ func (r *Room) run() {
 			}
 		case c := <-r.UpdateAll:
 			if r.RoomStartGame {
+				r.updateAllPlayers(c, "enablePlayer")
 				r.updateAllPlayers(c, Command)
 			}
 			if r.RoomReadyCounter == 2 && !r.RoomStartGame {
@@ -72,6 +74,7 @@ func (r *Room) run() {
 					PlayerCounter: 0,
 				}
 				game.StartGame()
+				MaxBet = game.MinBet * 2
 				r.RoomStartGame = true
 			}
 		}

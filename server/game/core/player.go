@@ -40,20 +40,23 @@ func (p *Player) Command(command string) string {
 	log.Print("Command: '", command, "' received by player: ", p.Name)
 	if command == "fold" {
 		p.Hand = []hand.Card{}
-		return "turnOffPlayer"
+		command = "turnOffPlayer"
 	} else if command == "check" {
-
+		command = "setCheck"
 	} else if command == "call" {
-
+		p.Chips -= MaxBet - p.Bet
+		p.Bet = MaxBet
+		command = "updatePlayerScore"
 	} else {
 		raiseCommand := strings.Split(command, " ")
-		command = "raise"
+		command = "updatePlayerScore"
 		bet, err := strconv.Atoi(raiseCommand[1])
 		if err != nil {
 			log.Println("error")
 		}
 		p.Bet = bet
 		p.Chips -= bet
+		MaxBet = bet
 	}
 	return command
 }
