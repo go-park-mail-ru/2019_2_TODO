@@ -73,12 +73,12 @@ type TableCardMsg struct {
 
 func (pc *playerConn) sendTableCards(command string, numberCards int) {
 	indexes := []int{}
-	for i := 0; i < numberCards-1; i++ {
+	for i := 0; i < numberCards; i++ {
 		indexes = append(indexes, i)
 	}
 	tableJSON := &TableJSON{
 		Indexes: indexes,
-		Cards:   pc.Room.Game.TableCards[:numberCards-1],
+		Cards:   pc.Room.Game.TableCards[:numberCards],
 	}
 	var cmd = make(map[string]*TableJSON)
 	cmd[command] = tableJSON
