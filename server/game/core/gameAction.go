@@ -9,6 +9,7 @@ type Game struct {
 	Dealer        int
 	MinBet        int
 	PlayerCounter int
+	MaxBet        int
 }
 
 func (game *Game) StartGame() {

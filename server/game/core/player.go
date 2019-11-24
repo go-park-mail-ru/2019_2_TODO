@@ -29,6 +29,7 @@ type Player struct {
 	Chips int
 	Hand  []hand.Card
 	Bet   int
+	*playerConn
 }
 
 func NewPlayer(name string, chips int) *Player {
@@ -45,8 +46,8 @@ func (p *Player) Command(command string) string {
 	} else if command == "check" {
 		command = "setCheck"
 	} else if command == "call" {
-		p.Chips -= MaxBet - p.Bet
-		p.Bet = MaxBet
+		p.Chips -= p.playerConn.Room.Game.MaxBet - p.Bet
+		p.Bet = p.playerConn.Room.Game.MaxBet
 		command = "updatePlayerScore"
 	} else {
 		raiseCommand := strings.Split(command, " ")
@@ -57,7 +58,7 @@ func (p *Player) Command(command string) string {
 		}
 		p.Bet = bet
 		p.Chips -= bet
-		MaxBet = bet
+		p.playerConn.Room.Game.MaxBet = bet
 	}
 	return command
 }

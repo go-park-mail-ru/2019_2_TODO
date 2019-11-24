@@ -10,14 +10,13 @@ import (
 var AllRooms = make(map[string]*Room)
 var FreeRooms = make(map[string]*Room)
 var RoomsCount int
-var MaxBet int
 var Command string
 
 type Room struct {
 	Name             string
 	RoomReadyCounter int32
 	RoomStartGame    bool
-	game             *Game
+	Game             *Game
 
 	// Registered connections.
 	PlayerConns map[*playerConn]bool
@@ -58,8 +57,8 @@ func (r *Room) run() {
 		case c := <-r.UpdateAll:
 			if r.RoomStartGame {
 				r.updateAllPlayers(c, Command)
-				r.game.PlayerCounterChange()
-				r.updateAllPlayers(r.game.Players[r.game.PlayerCounter], "enablePlayer")
+				r.Game.PlayerCounterChange()
+				r.updateAllPlayers(r.Game.Players[r.Game.PlayerCounter], "enablePlayer")
 			}
 			if r.RoomReadyCounter == 3 && !r.RoomStartGame {
 				log.Println("All Players are Ready")
@@ -68,7 +67,7 @@ func (r *Room) run() {
 					players = append(players, player)
 					player.sendState("startGame")
 				}
-				r.game = &Game{
+				r.Game = &Game{
 					Players:       players,
 					TableCards:    []hand.Card{},
 					Bank:          0,
@@ -76,10 +75,10 @@ func (r *Room) run() {
 					MinBet:        20,
 					PlayerCounter: 0,
 				}
-				r.game.StartGame()
-				MaxBet = r.game.MinBet * 2
+				r.Game.StartGame()
+				r.Game.MaxBet = r.Game.MinBet * 2
 				r.RoomStartGame = true
-				r.updateAllPlayers(r.game.Players[r.game.PlayerCounter], "enablePlayer")
+				r.updateAllPlayers(r.Game.Players[r.Game.PlayerCounter], "enablePlayer")
 			}
 		}
 	}
@@ -123,7 +122,7 @@ func NewRoom(name string) *Room {
 	room := &Room{
 		Name:             name,
 		RoomReadyCounter: 0,
-		game:             &Game{},
+		Game:             &Game{},
 		PlayerConns:      make(map[*playerConn]bool),
 		UpdateAll:        make(chan *playerConn),
 		Join:             make(chan *playerConn),

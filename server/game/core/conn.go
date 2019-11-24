@@ -9,7 +9,7 @@ import (
 type playerConn struct {
 	ws *websocket.Conn
 	*Player
-	room *Room
+	Room *Room
 }
 
 // Receive msg from ws in goroutine
@@ -22,15 +22,14 @@ func (pc *playerConn) receiver() {
 		// execute a command
 		log.Print("Command: '", string(command), "' received by player: ", pc.Player.Name)
 		if string(command) == "ready" {
-			pc.room.RoomReadyCounter++
+			pc.Room.RoomReadyCounter++
 		} else {
 			Command = pc.Command(string(command))
 		}
-
 		// update all conn
-		pc.room.UpdateAll <- pc
+		pc.Room.UpdateAll <- pc
 	}
-	pc.room.Leave <- pc
+	pc.Room.Leave <- pc
 	pc.ws.Close()
 }
 
@@ -45,7 +44,7 @@ func (pc *playerConn) sendState(command string) {
 	err := pc.ws.WriteJSON(msg)
 	mutex.Unlock()
 	if err != nil {
-		pc.room.Leave <- pc
+		pc.Room.Leave <- pc
 		pc.ws.Close()
 	}
 }
@@ -61,7 +60,7 @@ func (pc *playerConn) sendNewPlayer(player *playerConn, command string) {
 	err := pc.ws.WriteJSON(msg)
 	mutex.Unlock()
 	if err != nil {
-		pc.room.Leave <- pc
+		pc.Room.Leave <- pc
 		pc.ws.Close()
 	}
 }
@@ -69,7 +68,7 @@ func (pc *playerConn) sendNewPlayer(player *playerConn, command string) {
 func (pc *playerConn) sendStartGame() {
 	err := pc.ws.WriteJSON(`{"Command":"StartGame"}`)
 	if err != nil {
-		pc.room.Leave <- pc
+		pc.Room.Leave <- pc
 		pc.ws.Close()
 	}
 }
