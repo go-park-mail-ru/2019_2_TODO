@@ -42,7 +42,7 @@ func (r *Room) run() {
 			r.updateLastPlayer(c, "addPlayer")
 
 			// if room is full - delete from freeRooms
-			if len(r.PlayerConns) == 3 {
+			if len(r.PlayerConns) == 2 {
 				delete(FreeRooms, r.Name)
 
 			}
@@ -60,7 +60,7 @@ func (r *Room) run() {
 				r.Game.PlayerCounterChange()
 				r.updateAllPlayers(r.Game.Players[r.Game.PlayerCounter], "enablePlayer")
 			}
-			if r.RoomReadyCounter == 3 && !r.RoomStartGame {
+			if r.RoomReadyCounter == 2 && !r.RoomStartGame {
 				log.Println("All Players are Ready")
 				players := []*playerConn{}
 				for player := range r.PlayerConns {
