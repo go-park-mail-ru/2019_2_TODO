@@ -49,7 +49,7 @@ func (r *Room) run() {
 
 		case c := <-r.Leave:
 			c.GiveUp()
-			// r.updateAllPlayers()
+			r.updateAllPlayersExceptYou(c, "removePlayer")
 			delete(r.PlayerConns, c)
 			if len(r.PlayerConns) == 0 {
 				goto Exit
