@@ -37,7 +37,8 @@ func (r *Room) run() {
 		select {
 		case c := <-r.Join:
 			r.PlayerConns[c] = true
-			r.updateAllPlayers(c, "addPlayer")
+			c.sendState("addPlayer")
+			r.updateAllPlayersExceptYou(c, "addPlayer")
 			r.updateLastPlayer(c, "addPlayer")
 
 			// if room is full - delete from freeRooms
@@ -88,6 +89,14 @@ Exit:
 	delete(FreeRooms, r.Name)
 	RoomsCount -= 1
 	log.Print("Room closed:", r.Name)
+}
+
+func (r *Room) updateAllPlayersExceptYou(conn *playerConn, command string) {
+	for c := range r.PlayerConns {
+		if conn != c {
+			c.sendNewPlayer(conn, command)
+		}
+	}
 }
 
 func (r *Room) updateAllPlayers(conn *playerConn, command string) {
