@@ -16,6 +16,7 @@ type Room struct {
 	Name             string
 	RoomReadyCounter int32
 	RoomStartRound   bool
+	RoomMaxBet       int
 	Game             *Game
 
 	// Registered connections.
@@ -71,6 +72,9 @@ func (r *Room) run() {
 					} else if r.Game.StageCounter == 4 {
 						winnerHand := r.endGame()
 						r.updateAllPlayersBank("setBank")
+						for conn := range r.PlayerConns {
+							r.updateAllPlayers(conn, "showPlayerCards")
+						}
 						for conn := range r.PlayerConns {
 							conn.sendWinnerHand(winnerHand, "showWinnerCards")
 						}
