@@ -32,7 +32,7 @@ func (game *Game) DealerChange() {
 }
 
 func (game *Game) StageCounterChange() {
-	game.StageCounter = (game.StageCounter + 1) % 4
+	game.StageCounter = (game.StageCounter + 1) % 5
 }
 
 func (game *Game) PlayerCounterChange() {
