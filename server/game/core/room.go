@@ -69,6 +69,7 @@ func (r *Room) run() {
 					} else if r.Game.StageCounter == 3 {
 						r.updateTableCards(c, "showTableCards", 5)
 					}
+					r.updateAllPlayers(c, "updatePlayerScore")
 				}
 				r.updateAllPlayers(r.Game.Players[r.Game.PlayerCounter], "enablePlayer")
 			}
