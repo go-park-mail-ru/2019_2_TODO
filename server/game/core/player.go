@@ -40,6 +40,7 @@ func (p *Player) Command(command string) string {
 	log.Print("Command: '", command, "' received by player: ", p.Name)
 	if command == "fold" {
 		p.Hand = []hand.Card{}
+		return "turnOffPlayer"
 	} else if command == "check" {
 
 	} else if command == "call" {
