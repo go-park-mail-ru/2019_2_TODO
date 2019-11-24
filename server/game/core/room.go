@@ -74,6 +74,7 @@ func (r *Room) run() {
 						for conn := range r.PlayerConns {
 							conn.sendWinnerHand(winnerHand, "showWinnerCards")
 						}
+						r.RoomReadyCounter = 0
 						r.RoomStartRound = false
 					}
 					for conn := range r.PlayerConns {
