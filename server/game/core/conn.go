@@ -42,7 +42,9 @@ func (pc *playerConn) sendState(command string) {
 		msg := &Msg{
 			Command: cmd,
 		}
+		mutex.Lock()
 		err := pc.ws.WriteJSON(msg)
+		mutex.Unlock()
 		if err != nil {
 			pc.room.Leave <- pc
 			pc.ws.Close()
