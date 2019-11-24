@@ -15,7 +15,7 @@ var Command string
 type Room struct {
 	Name             string
 	RoomReadyCounter int32
-	RoomStartGame    bool
+	RoomStartRound   bool
 	Game             *Game
 
 	// Registered connections.
@@ -55,7 +55,7 @@ func (r *Room) run() {
 				goto Exit
 			}
 		case c := <-r.UpdateAll:
-			if r.RoomStartGame {
+			if r.RoomStartRound {
 				r.updateAllPlayers(c, Command)
 				r.Game.PlayerCounterChange()
 				if r.Game.PlayerCounter == r.Game.Dealer {
@@ -68,6 +68,13 @@ func (r *Room) run() {
 						r.updateTableCards(c, "showTableCards", 4)
 					} else if r.Game.StageCounter == 3 {
 						r.updateTableCards(c, "showTableCards", 5)
+					} else if r.Game.StageCounter == 4 {
+						winnerHand := r.endGame()
+						r.updateAllPlayersBank("setBank")
+						for conn := range r.PlayerConns {
+							conn.sendWinnerHand(winnerHand, "showWinnerCards")
+						}
+						r.RoomStartRound = false
 					}
 					for conn := range r.PlayerConns {
 						r.updateAllPlayers(conn, "updatePlayerScore")
@@ -75,8 +82,7 @@ func (r *Room) run() {
 				}
 				r.updateAllPlayers(r.Game.Players[r.Game.PlayerCounter], "enablePlayer")
 			}
-			if r.RoomReadyCounter == 2 && !r.RoomStartGame {
-				log.Println("All Players are Ready")
+			if r.RoomReadyCounter == 2 && !r.RoomStartRound {
 				players := []*playerConn{}
 				for player := range r.PlayerConns {
 					players = append(players, player)
@@ -93,7 +99,7 @@ func (r *Room) run() {
 				}
 				r.Game.StartGame()
 				r.Game.MaxBet = r.Game.MinBet * 2
-				r.RoomStartGame = true
+				r.RoomStartRound = true
 				r.updateAllPlayers(r.Game.Players[r.Game.PlayerCounter], "enablePlayer")
 			}
 		}
@@ -106,6 +112,31 @@ Exit:
 	delete(FreeRooms, r.Name)
 	RoomsCount -= 1
 	log.Print("Room closed:", r.Name)
+}
+
+func (r *Room) endGame() []hand.Card {
+	var bestHand = []hand.Card{}
+	var bestRank int32 = 7463
+	var player **playerConn
+	for c := range r.PlayerConns {
+		currentHand := c.Player.Hand
+		currentHand = append(currentHand, r.Game.TableCards...)
+		rankCurrentHand := hand.Evaluate(currentHand)
+		if rankCurrentHand < bestRank {
+			bestRank = rankCurrentHand
+			bestHand = currentHand
+			player = &c
+		}
+	}
+	(*player).Player.Chips += r.Game.Bank
+	r.Game.Bank = 0
+	return bestHand
+}
+
+func (r *Room) updateAfterEndGame(winnerHand []hand.Card, command string) {
+	for c := range r.PlayerConns {
+		c.sendWinnerHand(winnerHand, command)
+	}
 }
 
 func (r *Room) setBank() {
