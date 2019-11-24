@@ -35,39 +35,35 @@ func (pc *playerConn) receiver() {
 }
 
 func (pc *playerConn) sendState(command string) {
-	go func() {
-		msgState := pc.GetState()
-		var cmd = make(map[string]*jsonMsg)
-		cmd[command] = msgState
-		msg := &Msg{
-			Command: cmd,
-		}
-		mutex.Lock()
-		err := pc.ws.WriteJSON(msg)
-		mutex.Unlock()
-		if err != nil {
-			pc.room.Leave <- pc
-			pc.ws.Close()
-		}
-	}()
+	msgState := pc.GetState()
+	var cmd = make(map[string]*jsonMsg)
+	cmd[command] = msgState
+	msg := &Msg{
+		Command: cmd,
+	}
+	mutex.Lock()
+	err := pc.ws.WriteJSON(msg)
+	mutex.Unlock()
+	if err != nil {
+		pc.room.Leave <- pc
+		pc.ws.Close()
+	}
 }
 
 func (pc *playerConn) sendNewPlayer(player *playerConn, command string) {
-	go func() {
-		msgState := player.GetState()
-		var cmd = make(map[string]*jsonMsg)
-		cmd[command] = msgState
-		msg := &Msg{
-			Command: cmd,
-		}
-		mutex.Lock()
-		err := pc.ws.WriteJSON(msg)
-		mutex.Unlock()
-		if err != nil {
-			pc.room.Leave <- pc
-			pc.ws.Close()
-		}
-	}()
+	msgState := player.GetState()
+	var cmd = make(map[string]*jsonMsg)
+	cmd[command] = msgState
+	msg := &Msg{
+		Command: cmd,
+	}
+	mutex.Lock()
+	err := pc.ws.WriteJSON(msg)
+	mutex.Unlock()
+	if err != nil {
+		pc.room.Leave <- pc
+		pc.ws.Close()
+	}
 }
 
 func (pc *playerConn) sendStartGame() {
