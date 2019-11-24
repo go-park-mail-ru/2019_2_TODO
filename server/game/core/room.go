@@ -70,7 +70,7 @@ func (r *Room) run() {
 						r.updateTableCards(c, "showTableCards", 5)
 					}
 					c.sendState("updatePlayerScore")
-					r.updateAllPlayers(c, "updatePlayerScore")
+					r.updateAllPlayersExceptYou(c, "updatePlayerScore")
 				}
 				r.updateAllPlayers(r.Game.Players[r.Game.PlayerCounter], "enablePlayer")
 			}
