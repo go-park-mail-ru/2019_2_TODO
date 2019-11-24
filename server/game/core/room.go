@@ -17,6 +17,7 @@ type Room struct {
 	Name             string
 	RoomReadyCounter int32
 	RoomStartGame    bool
+	game             *Game
 
 	// Registered connections.
 	PlayerConns map[*playerConn]bool
@@ -57,7 +58,7 @@ func (r *Room) run() {
 		case c := <-r.UpdateAll:
 			if r.RoomStartGame {
 				r.updateAllPlayers(c, Command)
-				r.updateAllPlayers(c, "enablePlayer")
+				r.updateAllPlayers(r.game.Players[r.game.PlayerCounter], "enablePlayer")
 			}
 			if r.RoomReadyCounter == 2 && !r.RoomStartGame {
 				log.Println("All Players are Ready")
@@ -66,7 +67,7 @@ func (r *Room) run() {
 					players = append(players, player)
 					player.sendState("startGame")
 				}
-				game := &Game{
+				r.game = &Game{
 					Players:       players,
 					TableCards:    []hand.Card{},
 					Bank:          0,
@@ -74,10 +75,10 @@ func (r *Room) run() {
 					MinBet:        20,
 					PlayerCounter: 0,
 				}
-				game.StartGame()
-				MaxBet = game.MinBet * 2
+				r.game.StartGame()
+				MaxBet = r.game.MinBet * 2
 				r.RoomStartGame = true
-				r.updateAllPlayers(c, "enablePlayer")
+				r.updateAllPlayers(r.game.Players[r.game.PlayerCounter], "enablePlayer")
 			}
 		}
 	}
@@ -113,18 +114,6 @@ func (r *Room) updateLastPlayer(conn *playerConn, command string) {
 	}
 }
 
-func (r *Room) processCommand(command string) {
-	if command == "fold" {
-
-	} else if command == "check" {
-
-	} else if command == "call" {
-
-	} else {
-
-	}
-}
-
 func NewRoom(name string) *Room {
 	if name == "" {
 		name = utils.RandString(16)
@@ -133,6 +122,7 @@ func NewRoom(name string) *Room {
 	room := &Room{
 		Name:             name,
 		RoomReadyCounter: 0,
+		game:             &Game{},
 		PlayerConns:      make(map[*playerConn]bool),
 		UpdateAll:        make(chan *playerConn),
 		Join:             make(chan *playerConn),
