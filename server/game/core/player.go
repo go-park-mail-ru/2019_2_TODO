@@ -14,6 +14,7 @@ var mutex = &sync.Mutex{}
 type jsonMsg struct {
 	ID       int32       `json:"id"`
 	Username string      `json:"username"`
+	Bet      int         `json:"bet"`
 	Score    int         `json:"score"`
 	Hand     []hand.Card `json:"hand"`
 }
@@ -65,6 +66,7 @@ func (p *Player) GetState() *jsonMsg {
 	msg := &jsonMsg{
 		ID:       p.ID,
 		Username: p.Name,
+		Bet:      p.Bet,
 		Score:    p.Chips,
 		Hand:     p.Hand,
 	}
