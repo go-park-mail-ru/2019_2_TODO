@@ -110,6 +110,11 @@ func (r *Room) run() {
 				r.Game.StartGame()
 				r.Game.MaxBet = r.Game.MinBet * 2
 				r.RoomStartRound = true
+				if r.Game.Players[r.Game.PlayerCounter].Bet < r.Game.MaxBet {
+					r.Game.Players[r.Game.PlayerCounter].CallCheck = "call"
+				} else {
+					r.Game.Players[r.Game.PlayerCounter].CallCheck = "check"
+				}
 				r.updateAllPlayers(r.Game.Players[r.Game.PlayerCounter], "enablePlayer")
 			}
 		}
