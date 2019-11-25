@@ -52,7 +52,7 @@ func (h *Handlers) getRooms(ctx echo.Context) error {
 		}
 	}
 	var rooms = map[string]int{}
-	for r, room := range core.AllRooms {
+	for r, room := range core.FreeRooms {
 		rooms[r] = len(room.PlayerConns)
 	}
 	var jsonRooms = &JSONRooms{
