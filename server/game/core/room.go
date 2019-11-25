@@ -132,10 +132,11 @@ func (r *Room) endGame() []hand.Card {
 		currentHand = append(currentHand, r.Game.TableCards...)
 		rankCurrentHand := hand.Evaluate(currentHand)
 		if rankCurrentHand < bestRank {
-			log.Println("Best rank")
 			bestRank = rankCurrentHand
 			bestHand = currentHand
 			player = &c
+			log.Println("Best rank: ")
+			log.Println(bestRank)
 		}
 		log.Print("BestPlayer.ID: ")
 		log.Println((*player).Player.ID)
