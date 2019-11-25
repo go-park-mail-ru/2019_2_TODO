@@ -85,7 +85,7 @@ func (r *Room) run() {
 						r.updateAllPlayers(conn, "updatePlayerScore")
 					}
 				}
-				if r.Game.Players[r.Game.PlayerCounter].Bet <= r.Game.MaxBet {
+				if r.Game.Players[r.Game.PlayerCounter].Bet < r.Game.MaxBet {
 					r.Game.Players[r.Game.PlayerCounter].CallCheck = "call"
 				} else {
 					r.Game.Players[r.Game.PlayerCounter].CallCheck = "check"
@@ -110,7 +110,7 @@ func (r *Room) run() {
 				r.Game.StartGame()
 				r.Game.MaxBet = r.Game.MinBet * 2
 				r.RoomStartRound = true
-				if r.Game.Players[r.Game.PlayerCounter].Bet <= r.Game.MaxBet {
+				if r.Game.Players[r.Game.PlayerCounter].Bet < r.Game.MaxBet {
 					r.Game.Players[r.Game.PlayerCounter].CallCheck = "call"
 				} else {
 					r.Game.Players[r.Game.PlayerCounter].CallCheck = "check"
