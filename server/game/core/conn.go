@@ -51,6 +51,7 @@ func (pc *playerConn) Command(command string) string {
 		pc.Player.Hand = []hand.Card{}
 		pc.Player.Active = false
 		counterOfActivePlayers := 0
+		pc.Room.Game.Bank += pc.Player.Bet
 		for c := range pc.Room.PlayerConns {
 			if c.Player.Active == true {
 				counterOfActivePlayers++
@@ -58,6 +59,11 @@ func (pc *playerConn) Command(command string) string {
 		}
 		if counterOfActivePlayers == 1 {
 			command = "endFoldGame"
+			for c := range pc.Room.PlayerConns {
+				if c.Player.Active == true {
+					c.Player.Chips += pc.Room.Game.Bank
+				}
+			}
 		} else {
 			command = "turnOffPlayer"
 		}
