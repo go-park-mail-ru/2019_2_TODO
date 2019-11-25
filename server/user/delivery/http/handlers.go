@@ -46,9 +46,6 @@ type JSONRooms struct {
 }
 
 func (h *Handlers) getRooms(ctx echo.Context) error {
-	for i := 0; i < 4; i++ {
-		core.NewRoom("")
-	}
 	var rooms = []string{}
 	for r := range core.AllRooms {
 		rooms = append(rooms, r)

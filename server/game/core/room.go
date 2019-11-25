@@ -11,6 +11,12 @@ var AllRooms = make(map[string]*Room)
 var FreeRooms = make(map[string]*Room)
 var RoomsCount int
 
+func init() {
+	for i := 0; i < 4; i++ {
+		NewRoom("")
+	}
+}
+
 type Room struct {
 	Name             string
 	RoomReadyCounter int32
