@@ -127,6 +127,7 @@ func (r *Room) run() {
 					StageCounter:  0,
 				}
 				r.Game.StartGame()
+				r.updateAllPlayersBank("setBank")
 				r.Game.MaxBet = r.Game.MinBet * 2
 				r.RoomStartRound = true
 				if r.Game.Players[r.Game.PlayerCounter].Bet < r.Game.MaxBet {

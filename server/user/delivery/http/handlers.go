@@ -46,6 +46,11 @@ type JSONRooms struct {
 }
 
 func (h *Handlers) getRooms(ctx echo.Context) error {
+	if len(core.FreeRooms) == 2 {
+		for i := 0; i < 4; i++ {
+			core.NewRoom("")
+		}
+	}
 	var rooms = map[string]int{}
 	for r, room := range core.AllRooms {
 		rooms[r] = len(room.PlayerConns)
