@@ -31,6 +31,7 @@ func NewUserHandler(e *echo.Echo, us user.Usecase) {
 	e.GET("/signin/", handlers.handleSignInGet)
 	e.GET("/signin/profile/", handlers.handleGetProfile)
 	e.GET("/logout/", handlers.handleLogout)
+	e.GET("/rooms/", handlers.getRooms)
 	e.GET("/multiplayer/", handlers.wsHandler)
 
 	e.POST("/signup/", handlers.handleSignUp)
@@ -38,6 +39,24 @@ func NewUserHandler(e *echo.Echo, us user.Usecase) {
 	e.POST("/signin/profile/", handlers.handleChangeProfile, middlewares.JWTMiddlewareCustom)
 	e.POST("/signin/profileImage/", handlers.handleChangeImage, middlewares.JWTMiddlewareCustom)
 
+}
+
+type JSONRooms struct {
+	Rooms []string `json:"rooms"`
+}
+
+func (h *Handlers) getRooms(ctx echo.Context) error {
+	for i := 0; i < 4; i++ {
+		core.NewRoom("")
+	}
+	var rooms = []string{}
+	for r := range core.AllRooms {
+		rooms = append(rooms, r)
+	}
+	var jsonRooms = &JSONRooms{
+		Rooms: rooms,
+	}
+	return ctx.JSON(http.StatusOK, jsonRooms)
 }
 
 func (h *Handlers) wsHandler(ctx echo.Context) error {
@@ -56,13 +75,15 @@ func (h *Handlers) wsHandler(ctx echo.Context) error {
 		playerName = params["name"][0]
 	}
 
+	var roomName string = "newRoom"
+	if len(params["roomName"]) > 0 {
+		roomName = params["roomName"][0]
+	}
+
 	// Get or create a room
 	var room *core.Room
-	if len(core.FreeRooms) > 0 {
-		for _, r := range core.FreeRooms {
-			room = r
-			break
-		}
+	if roomName != "newRoom" {
+		room = core.AllRooms[roomName]
 	} else {
 		room = core.NewRoom("")
 	}
