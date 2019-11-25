@@ -49,6 +49,16 @@ func (pc *playerConn) Command(command string) string {
 	log.Print("Command: '", command, "' received by player: ", pc.Player.Name)
 	if command == "fold" {
 		pc.Player.Hand = []hand.Card{}
+		pc.Player.Active = false
+		counterOfActivePlayers := 0
+		for c := range pc.Room.PlayerConns {
+			if c.Player.Active == true {
+				counterOfActivePlayers++
+			}
+		}
+		if counterOfActivePlayers == 1 {
+			command = "endFoldGame"
+		}
 		command = "turnOffPlayer"
 	} else if command == "check" {
 		command = "setCheck"

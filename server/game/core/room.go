@@ -58,6 +58,14 @@ func (r *Room) run() {
 		case c := <-r.UpdateAll:
 			if r.RoomStartRound {
 				r.updateAllPlayers(c, r.Command)
+				for conn := range r.PlayerConns {
+					r.updateAllPlayers(conn, "updatePlayerScore")
+				}
+				if r.Command == "endFoldGame" {
+					r.RoomReadyCounter = 0
+					r.RoomStartRound = false
+					goto EndFoldGame
+				}
 				r.Game.PlayerCounterChange()
 				if r.Game.PlayerCounter == r.Game.Dealer {
 					r.Game.StageCounterChange()
@@ -92,9 +100,11 @@ func (r *Room) run() {
 				}
 				r.updateAllPlayers(r.Game.Players[r.Game.PlayerCounter], "enablePlayer")
 			}
+		EndFoldGame:
 			if r.RoomReadyCounter == 2 && !r.RoomStartRound {
 				players := []*playerConn{}
 				for player := range r.PlayerConns {
+					player.Active = true
 					players = append(players, player)
 					player.sendState("startGame")
 				}

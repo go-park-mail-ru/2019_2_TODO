@@ -27,6 +27,7 @@ type Player struct {
 	Hand      []hand.Card
 	Bet       int
 	CallCheck string
+	Active    bool
 }
 
 func NewPlayer(name string, chips int) *Player {
