@@ -30,7 +30,7 @@ type Player struct {
 }
 
 func NewPlayer(name string, chips int) *Player {
-	player := &Player{ID: IDplayer, Name: name, Chips: chips, Hand: []hand.Card{}}
+	player := &Player{ID: IDplayer, Name: name, Chips: chips, Hand: []hand.Card{}, CallCheck: "check"}
 	IDplayer++
 	return player
 }
