@@ -32,6 +32,7 @@ func (game *Game) DealerChange() {
 }
 
 func (game *Game) StageCounterChange() {
+	game.MaxBet = 0
 	game.StageCounter = (game.StageCounter + 1) % 5
 }
 
