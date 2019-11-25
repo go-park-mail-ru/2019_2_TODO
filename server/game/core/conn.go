@@ -61,6 +61,7 @@ func (pc *playerConn) Command(command string) string {
 			command = "endFoldGame"
 			for c := range pc.Room.PlayerConns {
 				if c.Player.Active == true {
+					pc.Room.Game.Bank += c.Player.Bet
 					c.Player.Chips += pc.Room.Game.Bank
 				}
 			}
