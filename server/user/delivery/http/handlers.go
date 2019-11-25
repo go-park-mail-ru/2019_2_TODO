@@ -42,13 +42,13 @@ func NewUserHandler(e *echo.Echo, us user.Usecase) {
 }
 
 type JSONRooms struct {
-	Rooms map[int]string `json:"rooms"`
+	Rooms map[string]int `json:"rooms"`
 }
 
 func (h *Handlers) getRooms(ctx echo.Context) error {
-	var rooms = map[int]string{}
+	var rooms = map[string]int{}
 	for r, room := range core.AllRooms {
-		rooms[len(room.PlayerConns)] = r
+		rooms[r] = len(room.PlayerConns)
 	}
 	var jsonRooms = &JSONRooms{
 		Rooms: rooms,
