@@ -10,13 +10,13 @@ import (
 var AllRooms = make(map[string]*Room)
 var FreeRooms = make(map[string]*Room)
 var RoomsCount int
-var Command string
 
 type Room struct {
 	Name             string
 	RoomReadyCounter int32
 	RoomStartRound   bool
 	RoomMaxBet       int
+	Command          string
 	Game             *Game
 
 	// Registered connections.
@@ -57,7 +57,7 @@ func (r *Room) run() {
 			}
 		case c := <-r.UpdateAll:
 			if r.RoomStartRound {
-				r.updateAllPlayers(c, Command)
+				r.updateAllPlayers(c, r.Command)
 				r.Game.PlayerCounterChange()
 				if r.Game.PlayerCounter == r.Game.Dealer {
 					r.Game.StageCounterChange()
@@ -84,6 +84,11 @@ func (r *Room) run() {
 					for conn := range r.PlayerConns {
 						r.updateAllPlayers(conn, "updatePlayerScore")
 					}
+				}
+				if r.Game.Players[r.Game.PlayerCounter].Bet < r.Game.MaxBet {
+					r.Game.Players[r.Game.PlayerCounter].CallCheck = "call"
+				} else {
+					r.Game.Players[r.Game.PlayerCounter].CallCheck = "check"
 				}
 				r.updateAllPlayers(r.Game.Players[r.Game.PlayerCounter], "enablePlayer")
 			}
@@ -134,8 +139,6 @@ func (r *Room) endGame() []hand.Card {
 			bestHand = currentHand
 			player = c
 		}
-		log.Print("Player: ")
-		log.Println((*player).Player.ID)
 	}
 	player.Player.Chips += r.Game.Bank
 	r.Game.Bank = 0

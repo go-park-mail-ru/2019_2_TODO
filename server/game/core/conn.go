@@ -3,6 +3,8 @@ package core
 import (
 	"log"
 	"server/game/hand"
+	"strconv"
+	"strings"
 
 	"github.com/gorilla/websocket"
 )
@@ -11,6 +13,15 @@ type playerConn struct {
 	ws *websocket.Conn
 	*Player
 	Room *Room
+}
+
+type TableJSON struct {
+	Indexes []int       `json:"indexes"`
+	Cards   []hand.Card `json:"cards"`
+}
+
+type TableCardMsg struct {
+	Command map[string]*TableJSON
 }
 
 // Receive msg from ws in goroutine
@@ -25,13 +36,38 @@ func (pc *playerConn) receiver() {
 		if string(command) == "ready" {
 			pc.Room.RoomReadyCounter++
 		} else {
-			Command = pc.Command(string(command))
+			pc.Room.Command = pc.Command(string(command))
 		}
 		// update all conn
 		pc.Room.UpdateAll <- pc
 	}
 	pc.Room.Leave <- pc
 	pc.ws.Close()
+}
+
+func (pc *playerConn) Command(command string) string {
+	log.Print("Command: '", command, "' received by player: ", pc.Player.Name)
+	if command == "fold" {
+		pc.Player.Hand = []hand.Card{}
+		command = "turnOffPlayer"
+	} else if command == "check" {
+		command = "setCheck"
+	} else if command == "call" {
+		pc.Player.Chips -= pc.Room.Game.MaxBet - pc.Player.Bet
+		pc.Player.Bet = pc.Room.Game.MaxBet
+		command = "updatePlayerScore"
+	} else {
+		raiseCommand := strings.Split(command, " ")
+		command = "updatePlayerScore"
+		bet, err := strconv.Atoi(raiseCommand[1])
+		if err != nil {
+			log.Println("error")
+		}
+		pc.Player.Bet = bet
+		pc.Player.Chips -= bet
+		pc.Room.Game.MaxBet = bet
+	}
+	return command
 }
 
 func (pc *playerConn) sendState(command string) {
@@ -92,15 +128,6 @@ func (pc *playerConn) sendNewPlayer(player *playerConn, command string) {
 		pc.Room.Leave <- pc
 		pc.ws.Close()
 	}
-}
-
-type TableJSON struct {
-	Indexes []int       `json:"indexes"`
-	Cards   []hand.Card `json:"cards"`
-}
-
-type TableCardMsg struct {
-	Command map[string]*TableJSON
 }
 
 func (pc *playerConn) sendTableCards(command string, numberCards int) {
