@@ -5,9 +5,10 @@
 package user
 
 import (
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 	model "server/model"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockUsecase is a mock of Usecase interface
