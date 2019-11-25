@@ -57,6 +57,9 @@ func (r *Room) run() {
 			}
 		case c := <-r.UpdateAll:
 			if r.RoomStartRound {
+				if r.Command == "endFoldGame" {
+					r.updateAllPlayers(c, "turnOffPlayer")
+				}
 				r.updateAllPlayers(c, r.Command)
 				for conn := range r.PlayerConns {
 					r.updateAllPlayers(conn, "updatePlayerScore")

@@ -58,8 +58,9 @@ func (pc *playerConn) Command(command string) string {
 		}
 		if counterOfActivePlayers == 1 {
 			command = "endFoldGame"
+		} else {
+			command = "turnOffPlayer"
 		}
-		command = "turnOffPlayer"
 	} else if command == "check" {
 		command = "setCheck"
 	} else if command == "call" {
