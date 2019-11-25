@@ -30,18 +30,19 @@ type Player struct {
 }
 
 func NewPlayer(name string, chips int) *Player {
-	player := &Player{ID: IDplayer, Name: name, Chips: chips, Hand: []hand.Card{}, CallCheck: "check"}
+	player := &Player{ID: IDplayer, Name: name, Chips: chips, Hand: []hand.Card{}}
 	IDplayer++
 	return player
 }
 
 func (p *Player) GetState() *jsonMsg {
 	msg := &jsonMsg{
-		ID:       p.ID,
-		Username: p.Name,
-		Bet:      p.Bet,
-		Score:    p.Chips,
-		Hand:     p.Hand,
+		ID:        p.ID,
+		Username:  p.Name,
+		Bet:       p.Bet,
+		Score:     p.Chips,
+		Hand:      p.Hand,
+		CallCheck: p.CallCheck,
 	}
 	return msg
 }
