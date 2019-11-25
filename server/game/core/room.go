@@ -124,14 +124,23 @@ func (r *Room) endGame() []hand.Card {
 	var bestRank int32 = 7463
 	var player **playerConn
 	for c := range r.PlayerConns {
+		log.Print("CurrentPlayer.ID: ")
+		log.Println(c.Player.ID)
+		log.Print("CurrentPlayer.Hand: ")
+		log.Println(c.Player.Hand)
 		currentHand := c.Player.Hand
 		currentHand = append(currentHand, r.Game.TableCards...)
 		rankCurrentHand := hand.Evaluate(currentHand)
 		if rankCurrentHand < bestRank {
+			log.Println("Best rank")
 			bestRank = rankCurrentHand
 			bestHand = currentHand
 			player = &c
 		}
+		log.Print("BestPlayer.ID: ")
+		log.Println((*player).Player.ID)
+		log.Print("BestPlayer.Hand: ")
+		log.Println((*player).Player.Hand)
 	}
 	(*player).Player.Chips += r.Game.Bank
 	r.Game.Bank = 0
