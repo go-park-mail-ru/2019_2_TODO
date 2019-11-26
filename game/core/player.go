@@ -1,8 +1,8 @@
 package core
 
 import (
+	"game/hand"
 	"log"
-	"server/game/hand"
 )
 
 var IDplayer int32 = 0

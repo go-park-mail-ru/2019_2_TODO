@@ -1,6 +1,6 @@
 package core
 
-import "server/game/hand"
+import "game/hand"
 
 type Game struct {
 	Players       []*playerConn

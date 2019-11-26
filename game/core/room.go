@@ -3,8 +3,8 @@ package core
 import (
 	"log"
 
-	"server/game/hand"
-	"server/game/utils"
+	"game/hand"
+	"game/utils"
 )
 
 var AllRooms = make(map[string]*Room)
