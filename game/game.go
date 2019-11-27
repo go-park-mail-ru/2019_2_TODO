@@ -6,15 +6,10 @@ import (
 	"net/url"
 
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/game/core"
-	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/session"
 
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
-)
-
-var (
-	sessManager session.AuthCheckerClient
 )
 
 const (
