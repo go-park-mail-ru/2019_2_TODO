@@ -1,4 +1,4 @@
-module "https://github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/session"
+module github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/session
 
 go 1.12
 
