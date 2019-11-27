@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/session"
+
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/game/core"
 
 	"github.com/gorilla/websocket"
@@ -15,6 +17,10 @@ import (
 const (
 	ListenAddr = "172.26.112.3:82"
 	FrontIP    = "http://93.171.139.195:782"
+)
+
+var (
+	sessManager session.AuthCheckerClient
 )
 
 type JSONRooms struct {
