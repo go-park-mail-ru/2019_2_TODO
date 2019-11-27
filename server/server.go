@@ -1,12 +1,13 @@
-package main
+package server
 
 import (
 	"net/http"
-	"server/user/repository"
-	"server/user/usecase"
-	"server/user/utils"
 
-	userhttp "server/user/delivery/http"
+	userhttp "github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/user/delivery/http"
+
+	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/user/repository"
+	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/user/usecase"
+	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/user/utils"
 
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"

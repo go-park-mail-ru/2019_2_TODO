@@ -2,7 +2,8 @@ package utils
 
 import (
 	"log"
-	"server/model"
+
+	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/model"
 
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"

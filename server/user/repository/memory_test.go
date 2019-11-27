@@ -3,8 +3,9 @@ package repository
 import (
 	"fmt"
 	"reflect"
-	"server/model"
 	"testing"
+
+	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/model"
 
 	sqlmock "github.com/DATA-DOG/go-sqlmock"
 )

@@ -1,10 +1,11 @@
 package main
 
 import (
-	"chat/chatLink/core"
 	"log"
 	"net/http"
 	"net/url"
+
+	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/chat/chatLink/core"
 
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo"
@@ -12,8 +13,8 @@ import (
 )
 
 const (
-	ListenAddr     = "172.26.112.3:81"
-	FrontIP        = "http://93.171.139.195:781"
+	ListenAddr = "172.26.112.3:81"
+	FrontIP    = "http://93.171.139.195:781"
 )
 
 type JSONRooms struct {
@@ -80,7 +81,7 @@ func main() {
 		AllowMethods:     []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
 		AllowCredentials: true,
 	}))
-	
+
 	e.GET("/getRooms/", func(ctx echo.Context) error {
 		getRooms(ctx)
 		return nil

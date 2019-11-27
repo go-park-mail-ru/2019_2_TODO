@@ -2,8 +2,9 @@ package middlewares
 
 import (
 	"net/http"
-	"server/user/utils"
 	"strings"
+
+	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/user/utils"
 
 	"github.com/labstack/echo"
 )

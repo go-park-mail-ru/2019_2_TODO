@@ -4,9 +4,10 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"log"
-	"server/model"
-	"server/user"
-	"server/user/utils"
+
+	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/model"
+	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/user"
+	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/user/utils"
 )
 
 // NewUserMemoryRepository - create connection and return new repository

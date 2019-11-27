@@ -1,6 +1,6 @@
 package user
 
-import "server/model"
+import "github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/model"
 
 // Repository - some funcs work with out repository
 type Repository interface {

@@ -1,8 +1,9 @@
 package core
 
 import (
-	"game/hand"
 	"log"
+
+	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/game/hand"
 )
 
 var IDplayer int32 = 0

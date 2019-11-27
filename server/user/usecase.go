@@ -1,6 +1,6 @@
 package user
 
-import "server/model"
+import "github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/model"
 
 // Usecase - some funcs work with our Usecase
 type Usecase interface {

@@ -1,14 +1,20 @@
 package game
 
 import (
-	"game/core"
 	"log"
 	"net/http"
 	"net/url"
 
+	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/game/core"
+	"https://github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/session"
+
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
+)
+
+var (
+	sessManager session.AuthCheckerClient
 )
 
 const (
@@ -20,7 +26,7 @@ type JSONRooms struct {
 	Rooms map[string]int `json:"rooms"`
 }
 
-func (h *Handlers) getRooms(ctx echo.Context) error {
+func getRooms(ctx echo.Context) error {
 	if len(core.FreeRooms) == 2 {
 		for i := 0; i < 4; i++ {
 			core.NewRoom("")
@@ -36,7 +42,7 @@ func (h *Handlers) getRooms(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, jsonRooms)
 }
 
-func (h *Handlers) wsHandler(ctx echo.Context) error {
+func wsHandler(ctx echo.Context) error {
 	ws, err := websocket.Upgrade(ctx.Response(), ctx.Request(), nil, 1024, 1024)
 	if _, ok := err.(websocket.HandshakeError); ok {
 		http.Error(ctx.Response(), "Not a websocket handshake", 400)
