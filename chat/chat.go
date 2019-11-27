@@ -1,15 +1,11 @@
 package main
 
 import (
-	"context"
 	"log"
 	"net/http"
 	"net/url"
 
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/chat/chatLink/core"
-	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/user/utils"
-	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/session"
-	"google.golang.org/grpc"
 
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo"
@@ -21,23 +17,23 @@ const (
 	FrontIP    = "http://93.171.139.195:781"
 )
 
-var (
-	sessManager session.AuthCheckerClient
-)
+// var (
+// 	sessManager session.AuthCheckerClient
+// )
 
-type tokenAuth struct {
-	Token string
-}
+// type tokenAuth struct {
+// 	Token string
+// }
 
-func (t *tokenAuth) GetRequestMetadata(context.Context, ...string) (map[string]string, error) {
-	return map[string]string{
-		"session_token": t.Token,
-	}, nil
-}
+// func (t *tokenAuth) GetRequestMetadata(context.Context, ...string) (map[string]string, error) {
+// 	return map[string]string{
+// 		"session_token": t.Token,
+// 	}, nil
+// }
 
-func (c *tokenAuth) RequireTransportSecurity() bool {
-	return false
-}
+// func (c *tokenAuth) RequireTransportSecurity() bool {
+// 	return false
+// }
 
 type JSONRooms struct {
 	Rooms []string `json:"rooms"`
@@ -69,18 +65,18 @@ func wsHandler(ctx echo.Context) {
 		username = params["name"][0]
 	}
 
-	ctxSes := context.Background()
-	nothing := &session.Nothing{}
-	sessionData, err := sessManager.HandleSignInGet(ctxSes, nothing)
+	// ctxSes := context.Background()
+	// nothing := &session.Nothing{}
+	// sessionData, err := sessManager.HandleSignInGet(ctxSes, nothing)
 
-	if err != nil {
-		log.Println("Error while grcp session check")
-	}
+	// if err != nil {
+	// 	log.Println("Error while grcp session check")
+	// }
 
-	emptySession := &session.Session{}
-	if sessionData != emptySession {
-		username = sessionData.GetUsername()
-	}
+	// emptySession := &session.Session{}
+	// if sessionData != emptySession {
+	// 	username = sessionData.GetUsername()
+	// }
 
 	roomName := username
 	// Get or create a room
@@ -117,19 +113,19 @@ func main() {
 		AllowCredentials: true,
 	}))
 
-	grcpConn, err := grpc.Dial(
-		utils.FrontIP,
-		grpc.WithPerRPCCredentials(&tokenAuth{"session_token"}),
-		grpc.WithInsecure(),
-	)
+	// grcpConn, err := grpc.Dial(
+	// 	utils.BackIP,
+	// 	grpc.WithPerRPCCredentials(&tokenAuth{"session_token"}),
+	// 	grpc.WithInsecure(),
+	// )
 
-	if err != nil {
-		log.Fatalf("cant connect to grpc")
-	}
+	// if err != nil {
+	// 	log.Fatalf("cant connect to grpc")
+	// }
 
-	defer grcpConn.Close()
+	// defer grcpConn.Close()
 
-	sessManager = session.NewAuthCheckerClient(grcpConn)
+	// sessManager = session.NewAuthCheckerClient(grcpConn)
 
 	e.GET("/getRooms/", func(ctx echo.Context) error {
 		getRooms(ctx)
