@@ -45,4 +45,3 @@ func (u *User) UserGetMessage() *Message {
 func (u *User) LeaveRoom() {
 	log.Print("User left: ", u.Msg.Autor)
 }
-

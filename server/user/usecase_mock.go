@@ -6,7 +6,8 @@ package user
 
 import (
 	reflect "reflect"
-	model "server/model"
+
+	model "github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/model"
 
 	gomock "github.com/golang/mock/gomock"
 )

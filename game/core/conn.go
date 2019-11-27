@@ -2,9 +2,10 @@ package core
 
 import (
 	"log"
-	"server/game/hand"
 	"strconv"
 	"strings"
+
+	hand "github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/game/hand"
 
 	"github.com/gorilla/websocket"
 )

@@ -4,11 +4,12 @@ import (
 	"encoding/base64"
 	"net/http"
 	"net/http/httptest"
-	"server/model"
-	"server/user"
-	"server/user/utils"
 	"strings"
 	"testing"
+
+	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/model"
+	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/user"
+	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/user/utils"
 
 	"github.com/golang/mock/gomock"
 	"github.com/labstack/echo"

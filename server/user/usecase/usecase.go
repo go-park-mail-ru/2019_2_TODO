@@ -1,8 +1,8 @@
 package usecase
 
 import (
-	"server/model"
-	"server/user"
+	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/model"
+	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/user"
 )
 
 // NewUserUsecase - create new userCase

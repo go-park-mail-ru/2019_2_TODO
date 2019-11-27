@@ -94,4 +94,3 @@ func NewRoom(name string) *Room {
 
 	return Room
 }
-

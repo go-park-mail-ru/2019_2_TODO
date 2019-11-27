@@ -5,15 +5,13 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
-	"server/game/core"
-	"server/middlewares"
-	"server/model"
-	"server/user"
-	"server/user/utils"
 
-	"github.com/gorilla/websocket"
+	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/middlewares"
+	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/model"
+	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/user"
+	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/user/utils"
+
 	"github.com/labstack/echo"
 	"github.com/microcosm-cc/bluemonday"
 )
@@ -31,74 +29,12 @@ func NewUserHandler(e *echo.Echo, us user.Usecase) {
 	e.GET("/signin/", handlers.handleSignInGet)
 	e.GET("/signin/profile/", handlers.handleGetProfile)
 	e.GET("/logout/", handlers.handleLogout)
-	e.GET("/rooms/", handlers.getRooms)
-	e.GET("/multiplayer/", handlers.wsHandler)
 
 	e.POST("/signup/", handlers.handleSignUp)
 	e.POST("/signin/", handlers.handleSignIn)
 	e.POST("/signin/profile/", handlers.handleChangeProfile, middlewares.JWTMiddlewareCustom)
 	e.POST("/signin/profileImage/", handlers.handleChangeImage, middlewares.JWTMiddlewareCustom)
 
-}
-
-type JSONRooms struct {
-	Rooms map[string]int `json:"rooms"`
-}
-
-func (h *Handlers) getRooms(ctx echo.Context) error {
-	if len(core.FreeRooms) == 2 {
-		for i := 0; i < 4; i++ {
-			core.NewRoom("")
-		}
-	}
-	var rooms = map[string]int{}
-	for r, room := range core.FreeRooms {
-		rooms[r] = len(room.PlayerConns)
-	}
-	var jsonRooms = &JSONRooms{
-		Rooms: rooms,
-	}
-	return ctx.JSON(http.StatusOK, jsonRooms)
-}
-
-func (h *Handlers) wsHandler(ctx echo.Context) error {
-	ws, err := websocket.Upgrade(ctx.Response(), ctx.Request(), nil, 1024, 1024)
-	if _, ok := err.(websocket.HandshakeError); ok {
-		http.Error(ctx.Response(), "Not a websocket handshake", 400)
-		return err
-	} else if err != nil {
-		return err
-	}
-
-	playerName := "Player"
-	var playerStartChips int = 1000
-	params, _ := url.ParseQuery(ctx.Request().URL.RawQuery)
-	if len(params["name"]) > 0 {
-		playerName = params["name"][0]
-	}
-
-	var roomName string = "newRoom"
-	if len(params["roomName"]) > 0 {
-		roomName = params["roomName"][0]
-	}
-
-	// Get or create a room
-	var room *core.Room
-	if roomName != "newRoom" {
-		room = core.AllRooms[roomName]
-	} else {
-		room = core.NewRoom("")
-	}
-
-	// Create Player and Conn
-	player := core.NewPlayer(playerName, playerStartChips)
-	pConn := core.NewPlayerConn(ws, player, room)
-	// Join Player to room
-	room.Join <- pConn
-
-	log.Printf("Player: %s has joined to room: %s", pConn.Name, room.Name)
-
-	return nil
 }
 
 func (h *Handlers) handleSignUp(ctx echo.Context) error {

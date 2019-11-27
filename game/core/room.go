@@ -3,8 +3,8 @@ package core
 import (
 	"log"
 
-	"server/game/hand"
-	"server/game/utils"
+	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/game/hand"
+	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/game/utils"
 )
 
 var AllRooms = make(map[string]*Room)

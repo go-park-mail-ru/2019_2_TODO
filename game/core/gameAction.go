@@ -1,6 +1,6 @@
 package core
 
-import "server/game/hand"
+import "github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/game/hand"
 
 type Game struct {
 	Players       []*playerConn
