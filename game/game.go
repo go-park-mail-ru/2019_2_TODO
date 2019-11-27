@@ -6,7 +6,6 @@ import (
 	"net/url"
 
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/game/core"
-	"https://github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/session"
 
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo"
