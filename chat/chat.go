@@ -137,5 +137,5 @@ func main() {
 		return nil
 	})
 
-	e.Logger.Fatal(e.Start(ListenAddr))
+	e.Logger.Fatal(e.Start(ListenAddr), "cert.pem", "key.pem", nil)
 }

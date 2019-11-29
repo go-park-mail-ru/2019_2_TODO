@@ -32,5 +32,5 @@ func main() {
 
 	userhttp.NewUserHandler(e, usecase.NewUserUsecase(repository.NewUserMemoryRepository()))
 
-	e.Logger.Fatal(e.Start(utils.ListenAddr))
+	e.Logger.Fatal(e.Start(utils.ListenAddr), "cert.pem", "key.pem", nil)
 }
