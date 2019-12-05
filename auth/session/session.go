@@ -26,7 +26,6 @@ func (sm *SessionManager) Create(ctx context.Context, in *Session) (*SessionID, 
 	id := SessionID{
 		ID: RandStringRunes(sessKeyLen),
 	}
-	log.Println(id)
 	dataSerialized, err := json.Marshal(in)
 	if err != nil {
 		return nil, err
