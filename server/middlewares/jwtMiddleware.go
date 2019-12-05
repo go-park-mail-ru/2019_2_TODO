@@ -13,10 +13,8 @@ import (
 func JWTMiddlewareCustom(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		tokenHandler := utils.JwtToken{}
-		session, err := utils.SessionsStore.Get(ctx.Request(), "session_token")
-		if err != nil {
-			return err
-		}
+		session := utils.ReadSessionIDAndUserID(ctx)
+
 		expiresAt := int64(60 * 360)
 		token, err := tokenHandler.Create(session, expiresAt)
 		if err != nil {

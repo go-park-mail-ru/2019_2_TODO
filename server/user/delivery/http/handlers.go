@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"encoding/base64"
 	"io"
 	"log"
@@ -56,8 +57,9 @@ func (h *Handlers) handleSignUp(ctx echo.Context) error {
 	}
 
 	log.Println("Last id: ", lastID)
+	newUserInput.ID = lastID
 
-	if err = utils.SetCookie(ctx, *newUserInput); err != nil {
+	if err = utils.SetSession(ctx, *newUserInput); err != nil {
 		ctx.JSON(http.StatusInternalServerError, "Cookie set error")
 	}
 
@@ -72,7 +74,6 @@ func (h *Handlers) handleSignUp(ctx echo.Context) error {
 }
 
 func (h *Handlers) handleSignIn(ctx echo.Context) error {
-
 	authCredentials := new(model.User)
 
 	if err := ctx.Bind(authCredentials); err != nil {
@@ -96,7 +97,7 @@ func (h *Handlers) handleSignIn(ctx echo.Context) error {
 	log.Println("UserData: ID - ", userRecord.ID, " Login - ", userRecord.Username,
 		" Avatar - ", userRecord.Avatar)
 
-	if err = utils.SetCookie(ctx, *userRecord); err != nil {
+	if err = utils.SetSession(ctx, *userRecord); err != nil {
 		ctx.JSON(http.StatusInternalServerError, "Cookie set error")
 	}
 
@@ -109,8 +110,17 @@ func (h *Handlers) handleSignIn(ctx echo.Context) error {
 }
 
 func (h *Handlers) handleSignInGet(ctx echo.Context) error {
-	cookieUsername := utils.ReadCookieUsername(ctx)
-	cookieAvatar := utils.ReadCookieAvatar(ctx)
+	session, err := utils.SessManager.Check(
+		context.Background(),
+		utils.ReadSessionID(ctx),
+	)
+
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, "Error Checking session")
+	}
+
+	cookieUsername := session.Username
+	cookieAvatar := session.Avatar
 
 	log.Println(cookieUsername + " " + cookieAvatar)
 
@@ -136,7 +146,7 @@ func (h *Handlers) handleSignInGet(ctx echo.Context) error {
 }
 
 func (h *Handlers) handleOk(ctx echo.Context) error {
-	utils.ClearCookie(ctx)
+	utils.ClearSession(ctx)
 	return nil
 }
 
@@ -148,7 +158,16 @@ func (h *Handlers) handleChangeProfile(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, "")
 	}
 
-	oldUsername := utils.ReadCookieUsername(ctx)
+	session, err := utils.SessManager.Check(
+		context.Background(),
+		utils.ReadSessionID(ctx),
+	)
+
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, "Error Checking session")
+	}
+
+	oldUsername := session.Username
 
 	oldData, err := h.Users.SelectDataByLogin(oldUsername)
 
@@ -172,7 +191,7 @@ func (h *Handlers) handleChangeProfile(ctx echo.Context) error {
 	}
 	log.Println("Update affectedRows: ", affected)
 
-	if err = utils.SetCookie(ctx, *changeProfileCredentials); err != nil {
+	if err = utils.SetSession(ctx, *changeProfileCredentials); err != nil {
 		ctx.JSON(http.StatusInternalServerError, "Cookie set error")
 	}
 
@@ -181,7 +200,16 @@ func (h *Handlers) handleChangeProfile(ctx echo.Context) error {
 
 func (h *Handlers) handleChangeImage(ctx echo.Context) error {
 
-	username := utils.ReadCookieUsername(ctx)
+	session, err := utils.SessManager.Check(
+		context.Background(),
+		utils.ReadSessionID(ctx),
+	)
+
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, "Error Checking session")
+	}
+
+	username := session.Username
 
 	fileName, err := loadAvatar(ctx, username)
 	if err != nil {
@@ -207,7 +235,7 @@ func (h *Handlers) handleChangeImage(ctx echo.Context) error {
 	}
 	log.Println("Update affectedRows: ", affected)
 
-	if err = utils.SetCookie(ctx, *changeData); err != nil {
+	if err = utils.SetSession(ctx, *changeData); err != nil {
 		ctx.JSON(http.StatusInternalServerError, "Cookie set error")
 	}
 
@@ -245,9 +273,18 @@ func loadAvatar(ctx echo.Context, username string) (string, error) {
 
 func (h *Handlers) handleGetProfile(ctx echo.Context) error {
 
+	session, err := utils.SessManager.Check(
+		context.Background(),
+		utils.ReadSessionID(ctx),
+	)
+
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, "Error Checking session")
+	}
+
 	cookiesData := model.User{
-		Username: utils.ReadCookieUsername(ctx),
-		Avatar:   utils.ReadCookieAvatar(ctx),
+		Username: session.Username,
+		Avatar:   session.Avatar,
 	}
 
 	if cookiesData.Username == "" {
@@ -258,6 +295,6 @@ func (h *Handlers) handleGetProfile(ctx echo.Context) error {
 }
 
 func (h *Handlers) handleLogout(ctx echo.Context) error {
-	utils.ClearCookie(ctx)
+	utils.ClearSession(ctx)
 	return ctx.JSON(http.StatusOK, "")
 }
