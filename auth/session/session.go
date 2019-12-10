@@ -31,6 +31,7 @@ func (sm *SessionManager) Create(ctx context.Context, in *Session) (*SessionID, 
 		return nil, err
 	}
 	mkey := "sessions:" + id.ID
+	log.Println(mkey)
 	result, err := redis.String(sm.redisConn.Do("SET", mkey, dataSerialized, "EX", 86400))
 	if err != nil {
 		return nil, err

@@ -17,6 +17,7 @@ import (
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/model"
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/user"
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/user/utils"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/naming"
 
@@ -92,7 +93,7 @@ func NewUserHandler(e *echo.Echo, us user.Usecase) {
 
 	handlers := Handlers{Users: us}
 
-	handlers.handleListenConsul(servers, sessManager)
+	e.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
 
 	e.GET("/", handlers.handleOk)
 	e.GET("/signin/", handlers.handleSignInGet)
@@ -104,6 +105,12 @@ func NewUserHandler(e *echo.Echo, us user.Usecase) {
 	e.POST("/signin/profile/", handlers.handleChangeProfile, middlewares.JWTMiddlewareCustom)
 	e.POST("/signin/profileImage/", handlers.handleChangeImage, middlewares.JWTMiddlewareCustom)
 
+	go handlers.handleListenConsul(servers, sessManager)
+}
+
+func (h *Handlers) handlePrometheus(ctx echo.Context) error {
+	promhttp.Handler()
+	return nil
 }
 
 func (h *Handlers) handleSignUp(ctx echo.Context) error {
@@ -178,6 +185,7 @@ func (h *Handlers) handleSignIn(ctx echo.Context) error {
 }
 
 func (h *Handlers) handleSignInGet(ctx echo.Context) error {
+	log.Println("I`m here")
 	session, err := utils.SessManager.Check(
 		context.Background(),
 		utils.ReadSessionID(ctx),
