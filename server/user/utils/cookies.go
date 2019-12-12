@@ -39,14 +39,13 @@ func SetSession(ctx echo.Context, userData *model.User) error {
 
 	if encoded, err := cookieHandler.Encode("session_token", value); err == nil {
 		expiration := time.Now().Add(24 * time.Hour)
-		cookie := http.Cookie{
+		cookie := &http.Cookie{
 			Name:    "session_token",
 			Value:   encoded,
 			Path:    "/",
 			Expires: expiration,
 		}
-
-		http.SetCookie(ctx.Response(), &cookie)
+		ctx.SetCookie(cookie)
 	}
 	return nil
 }
@@ -58,13 +57,13 @@ func ClearSession(ctx echo.Context) error {
 	if err != nil {
 		return err
 	}
-	cookie := http.Cookie{
+	cookie := &http.Cookie{
 		Name:    "session_token",
 		Value:   "",
 		Path:    "/",
 		Expires: time.Unix(0, 0),
 	}
-	http.SetCookie(ctx.Response(), &cookie)
+	ctx.SetCookie(cookie)
 	return nil
 }
 
