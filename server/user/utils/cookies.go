@@ -23,13 +23,11 @@ var cookieHandler = securecookie.New(
 )
 
 func SetSession(ctx echo.Context, userData model.User) error {
-	log.Println(SessManager)
-	sessID, err := SessManager.Create(
-		context.Background(),
-		&session.Session{
-			Username: userData.Username,
-			Avatar:   userData.Avatar,
-		})
+	sessionCreate := &session.Session{
+		Username: userData.Username,
+		Avatar:   userData.Avatar,
+	}
+	sessID, err := SessManager.Create(context.Background(), sessionCreate)
 	if err != nil {
 		return err
 	}
