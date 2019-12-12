@@ -70,10 +70,12 @@ func (h *Handlers) handleSignUp(ctx echo.Context) error {
 		ctx.JSON(http.StatusInternalServerError, "Cookie set error")
 	}
 
-	err = utils.SetToken(ctx)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, "Token set error")
-	}
+	defer func() {
+		err = utils.SetToken(ctx)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, "Token set error")
+		}
+	}()
 
 	log.Println(newUserInput.Username)
 
@@ -108,10 +110,12 @@ func (h *Handlers) handleSignIn(ctx echo.Context) error {
 		ctx.JSON(http.StatusInternalServerError, "Cookie set error")
 	}
 
-	err = utils.SetToken(ctx)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, "Token set error")
-	}
+	defer func() {
+		err = utils.SetToken(ctx)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, "Token set error")
+		}
+	}()
 
 	return nil
 }

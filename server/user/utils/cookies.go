@@ -94,7 +94,7 @@ func ReadSessionID(ctx echo.Context) *session.SessionID {
 	return nil
 }
 
-func ReadSessionIDAndUserID(ctx echo.Context) []string {
+func ReadSessionIDAndUserIDFromRequest(ctx echo.Context) []string {
 	if cookie, err := ctx.Request().Cookie("session_token"); err == nil {
 		value := make(map[string]string)
 		if err = cookieHandler.Decode("session_token", cookie.Value, &value); err == nil {
