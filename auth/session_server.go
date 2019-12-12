@@ -36,9 +36,7 @@ func main() {
 
 	server := grpc.NewServer()
 
-	sessionManager := session.NewSessionManager(redisConn)
-
-	session.RegisterAuthCheckerServer(server, sessionManager)
+	session.RegisterAuthCheckerServer(server, session.NewSessionManager(redisConn))
 
 	// sessionManager.Create(context.Background(), &session.Session{
 	// 	Username: "login", Avatar: "default",
