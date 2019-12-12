@@ -38,10 +38,6 @@ func main() {
 
 	session.RegisterAuthCheckerServer(server, session.NewSessionManager(redisConn))
 
-	// sessionManager.Create(context.Background(), &session.Session{
-	// 	Username: "login", Avatar: "default",
-	// })
-
 	config := consulapi.DefaultConfig()
 	config.Address = utils.ConsulAddr
 	consul, err := consulapi.NewClient(config)

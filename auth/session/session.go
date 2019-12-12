@@ -23,6 +23,7 @@ func NewSessionManager(conn redis.Conn) *SessionManager {
 }
 
 func (sm *SessionManager) Create(ctx context.Context, in *Session) (*SessionID, error) {
+	log.Println("call Create", in)
 	id := SessionID{
 		ID: RandStringRunes(sessKeyLen),
 	}
@@ -43,6 +44,7 @@ func (sm *SessionManager) Create(ctx context.Context, in *Session) (*SessionID, 
 }
 
 func (sm *SessionManager) Check(ctx context.Context, in *SessionID) (*Session, error) {
+	log.Println("call Check", in)
 	mkey := "sessions:" + in.ID
 	data, err := redis.Bytes(sm.redisConn.Do("GET", mkey))
 	if err != nil {
@@ -59,6 +61,7 @@ func (sm *SessionManager) Check(ctx context.Context, in *SessionID) (*Session, e
 }
 
 func (sm *SessionManager) Delete(ctx context.Context, in *SessionID) (*Nothing, error) {
+	log.Println("call Delete", in)
 	mkey := "sessions:" + in.ID
 	_, err := redis.Int(sm.redisConn.Do("DEL", mkey))
 	if err != nil {
