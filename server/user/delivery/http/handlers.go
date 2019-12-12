@@ -36,7 +36,7 @@ func NewUserHandler(e *echo.Echo, us user.Usecase) {
 
 	e.POST("/signup/", handlers.handleSignUp)
 	e.POST("/signin/", handlers.handleSignIn)
-	e.POST("/signin/profile/", handlers.handleChangeProfile, middlewares.JWTMiddlewareCustom)
+	e.POST("/profileChange/", handlers.handleChangeProfile, middlewares.JWTMiddlewareCustom)
 	e.POST("/signin/profileImage/", handlers.handleChangeImage, middlewares.JWTMiddlewareCustom)
 
 }

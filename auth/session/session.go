@@ -67,7 +67,7 @@ func (sm *SessionManager) Delete(ctx context.Context, in *SessionID) (*Nothing, 
 	if err != nil {
 		log.Println("redis error:", err)
 	}
-	return nil, nil
+	return &Nothing{}, nil
 }
 
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
