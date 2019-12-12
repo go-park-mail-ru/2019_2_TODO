@@ -162,6 +162,7 @@ func (h *Handlers) handleOk(ctx echo.Context) error {
 }
 
 func (h *Handlers) handleChangeProfile(ctx echo.Context) error {
+	log.Println("Im here")
 
 	changeProfileCredentials := new(model.User)
 
