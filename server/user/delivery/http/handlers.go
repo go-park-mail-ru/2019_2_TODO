@@ -91,21 +91,42 @@ func NewUserHandler(e *echo.Echo, us user.Usecase) {
 
 	sessManager := session.NewAuthCheckerClient(grcpConn)
 
-	handlers := Handlers{Users: us}
+	// тут мы будем периодически опрашивать консул на предмет изменений
+	go runOnlineServiceDiscovery(servers)
+	ctx := context.Background()
+	step := 1
+	go func() {
+		for {
+			// проверяем несуществуюущую сессию
+			// потому что сейчас между сервисами нет общения
+			// получаем загшулку
+			sess, err := sessManager.Check(ctx,
+				&session.SessionID{
+					ID: "not_exist_" + strconv.Itoa(step),
+				})
+			fmt.Println("get sess", step, sess, err)
 
-	e.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
+			time.Sleep(1500 * time.Millisecond)
+			step++
+		}
+	}()
 
-	e.GET("/", handlers.handleOk)
-	e.GET("/signin/", handlers.handleSignInGet)
-	e.GET("/signin/profile/", handlers.handleGetProfile)
-	e.GET("/logout/", handlers.handleLogout)
+	go func() {
+		handlers := Handlers{Users: us}
 
-	e.POST("/signup/", handlers.handleSignUp)
-	e.POST("/signin/", handlers.handleSignIn)
-	e.POST("/signin/profile/", handlers.handleChangeProfile, middlewares.JWTMiddlewareCustom)
-	e.POST("/signin/profileImage/", handlers.handleChangeImage, middlewares.JWTMiddlewareCustom)
+		e.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
 
-	go handlers.handleListenConsul(servers, sessManager)
+		e.GET("/", handlers.handleOk)
+		e.GET("/signin/", handlers.handleSignInGet)
+		e.GET("/signin/profile/", handlers.handleGetProfile)
+		e.GET("/logout/", handlers.handleLogout)
+
+		e.POST("/signup/", handlers.handleSignUp)
+		e.POST("/signin/", handlers.handleSignIn)
+		e.POST("/signin/profile/", handlers.handleChangeProfile, middlewares.JWTMiddlewareCustom)
+		e.POST("/signin/profileImage/", handlers.handleChangeImage, middlewares.JWTMiddlewareCustom)
+	}()
+	// go handlers.handleListenConsul(servers, sessManager)
 }
 
 func (h *Handlers) handlePrometheus(ctx echo.Context) error {
