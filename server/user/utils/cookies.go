@@ -22,12 +22,14 @@ var cookieHandler = securecookie.New(
 	securecookie.GenerateRandomKey(32),
 )
 
-func SetSession(ctx echo.Context, userData model.User) error {
-	sessionCreate := &session.Session{
-		Username: userData.Username,
-		Avatar:   userData.Avatar,
-	}
-	sessID, err := SessManager.Create(context.Background(), sessionCreate)
+func SetSession(ctx echo.Context, userData *model.User) error {
+	log.Println(SessManager)
+	sessID, err := SessManager.Create(
+		context.Background(),
+		&session.Session{
+			Username: userData.Username,
+			Avatar:   userData.Avatar,
+		})
 	if err != nil {
 		return err
 	}
