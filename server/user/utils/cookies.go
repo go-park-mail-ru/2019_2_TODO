@@ -29,8 +29,7 @@ func SetSession(ctx echo.Context, userData model.User) error {
 		&session.Session{
 			Username: userData.Username,
 			Avatar:   userData.Avatar,
-		},
-	)
+		})
 	if err != nil {
 		return err
 	}
@@ -56,8 +55,7 @@ func SetSession(ctx echo.Context, userData model.User) error {
 func ClearSession(ctx echo.Context) error {
 	_, err := SessManager.Delete(
 		context.Background(),
-		ReadSessionID(ctx),
-	)
+		ReadSessionID(ctx))
 	if err != nil {
 		return err
 	}
@@ -79,8 +77,7 @@ func СheckSession(ctx echo.Context) (*session.Session, error) {
 
 	sess, err := SessManager.Check(
 		context.Background(),
-		cookieSessionID,
-	)
+		cookieSessionID)
 	if err != nil {
 		log.Println(err)
 	}
