@@ -98,24 +98,6 @@ func main() {
 
 	go runOnlineServiceDiscovery(servers)
 
-	go func() {
-		ctx := context.Background()
-		step := 1
-		for {
-			// проверяем несуществуюущую сессию
-			// потому что сейчас между сервисами нет общения
-			// получаем загшулку
-			sess, err := utils.SessManager.Check(ctx,
-				&session.SessionID{
-					ID: "not_exist_" + strconv.Itoa(step),
-				})
-			fmt.Println("get sess", step, sess, err)
-
-			time.Sleep(1500 * time.Millisecond)
-			step++
-		}
-	}()
-
 	e := echo.New()
 
 	// e.Use(middlewares.MetricsMiddleware())
