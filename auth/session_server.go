@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -41,9 +40,9 @@ func main() {
 
 	session.RegisterAuthCheckerServer(server, sessionManager)
 
-	sessionManager.Create(context.Background(), &session.Session{
-		Username: "login", Avatar: "default",
-	})
+	// sessionManager.Create(context.Background(), &session.Session{
+	// 	Username: "login", Avatar: "default",
+	// })
 
 	config := consulapi.DefaultConfig()
 	config.Address = utils.ConsulAddr
