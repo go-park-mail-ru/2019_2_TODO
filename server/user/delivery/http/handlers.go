@@ -222,7 +222,7 @@ func (h *Handlers) handleSignInGet(ctx echo.Context) error {
 }
 
 func (h *Handlers) handleOk(ctx echo.Context) error {
-	utils.ClearSession(ctx)
+	// utils.ClearSession(ctx)
 	return nil
 }
 
