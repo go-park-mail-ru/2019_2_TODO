@@ -91,7 +91,7 @@ func NewUserHandler(e *echo.Echo, us user.Usecase) {
 
 	utils.SessManager = session.NewAuthCheckerClient(grcpConn)
 
-	go runOnlineServiceDiscovery(servers)
+	// go runOnlineServiceDiscovery(servers)
 
 	// ctx := context.Background()
 	// step := 1
@@ -108,6 +108,17 @@ func NewUserHandler(e *echo.Echo, us user.Usecase) {
 	// 	time.Sleep(1500 * time.Millisecond)
 	// 	step++
 	// }
+
+	sess, err := utils.SessManager.Create(context.Background(),
+		&session.Session{
+			Username: "login",
+			Avatar:   "hello",
+		})
+
+	log.Println(sess)
+	if err != nil {
+		log.Println(err)
+	}
 
 	handlers := Handlers{Users: us}
 
