@@ -89,7 +89,25 @@ func NewUserHandler(e *echo.Echo, us user.Usecase) {
 		nameResolver.w.inject(updates)
 	}
 
-	sessManager := session.NewAuthCheckerClient(grcpConn)
+	utils.SessManager = session.NewAuthCheckerClient(grcpConn)
+
+	go runOnlineServiceDiscovery(servers)
+
+	// ctx := context.Background()
+	// step := 1
+	// for {
+	// 	// проверяем несуществуюущую сессию
+	// 	// потому что сейчас между сервисами нет общения
+	// 	// получаем загшулку
+	// 	sess, err := utils.SessManager.Check(ctx,
+	// 		&session.SessionID{
+	// 			ID: "not_exist_" + strconv.Itoa(step),
+	// 		})
+	// 	fmt.Println("get sess", step, sess, err)
+
+	// 	time.Sleep(1500 * time.Millisecond)
+	// 	step++
+	// }
 
 	handlers := Handlers{Users: us}
 
@@ -105,7 +123,6 @@ func NewUserHandler(e *echo.Echo, us user.Usecase) {
 	e.POST("/signin/profile/", handlers.handleChangeProfile, middlewares.JWTMiddlewareCustom)
 	e.POST("/signin/profileImage/", handlers.handleChangeImage, middlewares.JWTMiddlewareCustom)
 
-	go handlers.handleListenConsul(servers, sessManager)
 }
 
 func (h *Handlers) handlePrometheus(ctx echo.Context) error {
@@ -374,29 +391,6 @@ func (h *Handlers) handleGetProfile(ctx echo.Context) error {
 func (h *Handlers) handleLogout(ctx echo.Context) error {
 	utils.ClearSession(ctx)
 	return ctx.JSON(http.StatusOK, "")
-}
-
-func (h *Handlers) handleListenConsul(servers []string, sessManager session.AuthCheckerClient) error {
-	// тут мы будем периодически опрашивать консул на предмет изменений
-	go runOnlineServiceDiscovery(servers)
-	ctx := context.Background()
-	step := 1
-	go func() {
-		for {
-			// проверяем несуществуюущую сессию
-			// потому что сейчас между сервисами нет общения
-			// получаем загшулку
-			sess, err := sessManager.Check(ctx,
-				&session.SessionID{
-					ID: "not_exist_" + strconv.Itoa(step),
-				})
-			fmt.Println("get sess", step, sess, err)
-
-			time.Sleep(1500 * time.Millisecond)
-			step++
-		}
-	}()
-	return nil
 }
 
 func runOnlineServiceDiscovery(servers []string) {
