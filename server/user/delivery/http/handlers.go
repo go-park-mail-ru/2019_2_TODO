@@ -91,26 +91,6 @@ func NewUserHandler(e *echo.Echo, us user.Usecase) {
 
 	sessManager := session.NewAuthCheckerClient(grcpConn)
 
-	// тут мы будем периодически опрашивать консул на предмет изменений
-	go runOnlineServiceDiscovery(servers)
-	ctx := context.Background()
-	step := 1
-	go func() {
-		for {
-			// проверяем несуществуюущую сессию
-			// потому что сейчас между сервисами нет общения
-			// получаем загшулку
-			sess, err := sessManager.Check(ctx,
-				&session.SessionID{
-					ID: "not_exist_" + strconv.Itoa(step),
-				})
-			fmt.Println("get sess", step, sess, err)
-
-			time.Sleep(1500 * time.Millisecond)
-			step++
-		}
-	}()
-
 	handlers := Handlers{Users: us}
 
 	e.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
@@ -125,7 +105,7 @@ func NewUserHandler(e *echo.Echo, us user.Usecase) {
 	e.POST("/signin/profile/", handlers.handleChangeProfile, middlewares.JWTMiddlewareCustom)
 	e.POST("/signin/profileImage/", handlers.handleChangeImage, middlewares.JWTMiddlewareCustom)
 
-	// go handlers.handleListenConsul(servers, sessManager)
+	go handlers.handleListenConsul(servers, sessManager)
 }
 
 func (h *Handlers) handlePrometheus(ctx echo.Context) error {
