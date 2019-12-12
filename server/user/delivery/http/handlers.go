@@ -111,21 +111,20 @@ func NewUserHandler(e *echo.Echo, us user.Usecase) {
 		}
 	}()
 
-	go func() {
-		handlers := Handlers{Users: us}
+	handlers := Handlers{Users: us}
 
-		e.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
+	e.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
 
-		e.GET("/", handlers.handleOk)
-		e.GET("/signin/", handlers.handleSignInGet)
-		e.GET("/signin/profile/", handlers.handleGetProfile)
-		e.GET("/logout/", handlers.handleLogout)
+	e.GET("/", handlers.handleOk)
+	e.GET("/signin/", handlers.handleSignInGet)
+	e.GET("/signin/profile/", handlers.handleGetProfile)
+	e.GET("/logout/", handlers.handleLogout)
 
-		e.POST("/signup/", handlers.handleSignUp)
-		e.POST("/signin/", handlers.handleSignIn)
-		e.POST("/signin/profile/", handlers.handleChangeProfile, middlewares.JWTMiddlewareCustom)
-		e.POST("/signin/profileImage/", handlers.handleChangeImage, middlewares.JWTMiddlewareCustom)
-	}()
+	e.POST("/signup/", handlers.handleSignUp)
+	e.POST("/signin/", handlers.handleSignIn)
+	e.POST("/signin/profile/", handlers.handleChangeProfile, middlewares.JWTMiddlewareCustom)
+	e.POST("/signin/profileImage/", handlers.handleChangeImage, middlewares.JWTMiddlewareCustom)
+
 	// go handlers.handleListenConsul(servers, sessManager)
 }
 
