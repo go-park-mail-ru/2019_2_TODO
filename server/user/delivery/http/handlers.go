@@ -169,6 +169,8 @@ func (h *Handlers) handleChangeProfile(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, "")
 	}
 
+	log.Println(changeProfileCredentials)
+
 	session, err := utils.СheckSession(ctx)
 
 	if err != nil {
