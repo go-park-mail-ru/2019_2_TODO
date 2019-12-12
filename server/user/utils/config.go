@@ -12,10 +12,10 @@ const (
 	PathToImages   = `/root/golang/server_with_db/2019_2_TODO/server/`
 	Secret         = `askhgashjasl;hjaojgh;asjha;shm;`
 	// Config to local test
-	// FrontIP     = "http://127.0.0.1:8082"
-	// FrontIPChat = "http://127.0.0.1:8081"
-	// BackIP      = "http://127.0.0.1:8082"
-	// ListenAddr = "127.0.0.1:8082"
+	// FrontIP        = "http://127.0.0.1:8082"
+	// FrontIPChat    = "http://127.0.0.1:8081"
+	// BackIP         = "http://127.0.0.1:8082"
+	// ListenAddr     = "127.0.0.1:8082"
 	// DataBaseConfig = "toringol:1234@tcp(localhost:3306)/users?"
 )
 

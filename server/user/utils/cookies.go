@@ -87,6 +87,7 @@ func СheckSession(ctx echo.Context) (*session.Session, error) {
 }
 
 func ReadSessionID(ctx echo.Context) *session.SessionID {
+	log.Println("Here")
 	if cookie, err := ctx.Request().Cookie("session_token"); err == nil {
 		value := make(map[string]string)
 		if err = cookieHandler.Decode("session_token", cookie.Value, &value); err == nil {
