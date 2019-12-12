@@ -43,6 +43,7 @@ func (sm *SessionManager) Create(ctx context.Context, in *Session) (*SessionID, 
 }
 
 func (sm *SessionManager) Check(ctx context.Context, in *SessionID) (*Session, error) {
+	log.Println("Ya zdes`")
 	mkey := "sessions:" + in.ID
 	data, err := redis.Bytes(sm.redisConn.Do("GET", mkey))
 	if err != nil {
