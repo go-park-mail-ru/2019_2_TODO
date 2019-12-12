@@ -71,5 +71,5 @@ func main() {
 
 	fmt.Println("starting server at :8080")
 
-	server.Serve(lis)
+	go server.Serve(lis)
 }
