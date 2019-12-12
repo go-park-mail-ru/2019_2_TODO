@@ -70,6 +70,7 @@ func ClearSession(ctx echo.Context) error {
 
 func СheckSession(ctx echo.Context) (*session.Session, error) {
 	cookieSessionID := ReadSessionID(ctx)
+	log.Println(cookieSessionID)
 	if cookieSessionID == nil {
 		return nil, nil
 	}
