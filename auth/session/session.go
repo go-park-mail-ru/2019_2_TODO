@@ -47,13 +47,13 @@ func (sm *SessionManager) Check(ctx context.Context, in *SessionID) (*Session, e
 	data, err := redis.Bytes(sm.redisConn.Do("GET", mkey))
 	if err != nil {
 		log.Println("cant get data:", err)
-		return nil, nil
+		return nil, err
 	}
 	sess := &Session{}
 	err = json.Unmarshal(data, sess)
 	if err != nil {
 		log.Println("cant unpack session data:", err)
-		return nil, nil
+		return nil, err
 	}
 	return sess, nil
 }
