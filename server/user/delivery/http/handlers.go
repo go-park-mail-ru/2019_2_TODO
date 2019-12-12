@@ -90,6 +90,7 @@ func NewUserHandler(e *echo.Echo, us user.Usecase) {
 	}
 
 	utils.SessManager = session.NewAuthCheckerClient(grcpConn)
+	log.Println(utils.SessManager)
 
 	// go runOnlineServiceDiscovery(servers)
 
