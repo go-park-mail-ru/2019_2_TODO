@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/auth/session"
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/middlewares"
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/model"
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/user"
@@ -69,24 +68,14 @@ func (h *Handlers) handleSignUp(ctx echo.Context) error {
 	log.Println("Last id: ", lastID)
 	newUserInput.ID = lastID
 
-	sess, err := utils.SessManager.Create(context.Background(),
-		&session.Session{
-			Username: newUserInput.Username,
-			Avatar:   newUserInput.Avatar,
-		})
-	log.Println(sess)
-	if err != nil {
-		log.Println(err)
+	if err = utils.SetSession(ctx, newUserInput); err != nil {
+		ctx.JSON(http.StatusInternalServerError, "Cookie set error")
 	}
 
-	// if err = utils.SetSession(ctx, newUserInput); err != nil {
-	// 	ctx.JSON(http.StatusInternalServerError, "Cookie set error")
-	// }
-
-	// err = utils.SetToken(ctx)
-	// if err != nil {
-	// 	ctx.JSON(http.StatusInternalServerError, "Token set error")
-	// }
+	err = utils.SetToken(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, "Token set error")
+	}
 
 	log.Println(newUserInput.Username)
 
@@ -121,10 +110,10 @@ func (h *Handlers) handleSignIn(ctx echo.Context) error {
 		ctx.JSON(http.StatusInternalServerError, "Cookie set error")
 	}
 
-	// err = utils.SetToken(ctx)
-	// if err != nil {
-	// 	ctx.JSON(http.StatusInternalServerError, "Token set error")
-	// }
+	err = utils.SetToken(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, "Token set error")
+	}
 
 	return nil
 }
@@ -168,7 +157,7 @@ func (h *Handlers) handleSignInGet(ctx echo.Context) error {
 }
 
 func (h *Handlers) handleOk(ctx echo.Context) error {
-	// utils.ClearSession(ctx)
+	utils.ClearSession(ctx)
 	return nil
 }
 
