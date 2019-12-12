@@ -169,10 +169,7 @@ func (h *Handlers) handleChangeProfile(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, "")
 	}
 
-	session, err := utils.SessManager.Check(
-		context.Background(),
-		utils.ReadSessionID(ctx),
-	)
+	session, err := utils.СheckSession(ctx)
 
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, "Error Checking session")
