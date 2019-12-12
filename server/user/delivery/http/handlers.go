@@ -108,10 +108,10 @@ func (h *Handlers) handleSignIn(ctx echo.Context) error {
 		ctx.JSON(http.StatusInternalServerError, "Cookie set error")
 	}
 
-	// err = utils.SetToken(ctx)
-	// if err != nil {
-	// 	ctx.JSON(http.StatusInternalServerError, "Token set error")
-	// }
+	err = utils.SetToken(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, "Token set error")
+	}
 
 	return nil
 }
@@ -208,7 +208,6 @@ func (h *Handlers) handleChangeProfile(ctx echo.Context) error {
 }
 
 func (h *Handlers) handleChangeImage(ctx echo.Context) error {
-
 	session, err := utils.SessManager.Check(
 		context.Background(),
 		utils.ReadSessionID(ctx),

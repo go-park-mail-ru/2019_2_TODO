@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -81,8 +82,10 @@ func (tk *JwtToken) parseSecretGetter(token *jwt.Token) (interface{}, error) {
 // SetToken - set and sign token and return token and error
 func SetToken(ctx echo.Context) error {
 	session := ReadSessionIDAndUserID(ctx)
+	log.Println(session)
 
 	token, err := NewJwtToken(Secret)
+	log.Println(token)
 	if err != nil {
 		return err
 	}
