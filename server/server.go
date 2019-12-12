@@ -3,7 +3,6 @@ package main
 import (
 	"net/http"
 
-	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/middlewares"
 	userhttp "github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/user/delivery/http"
 
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/user/repository"
@@ -19,7 +18,7 @@ import (
 func main() {
 	e := echo.New()
 
-	e.Use(middlewares.MetricsMiddleware())
+	// e.Use(middlewares.MetricsMiddleware())
 
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Format: "[${method}] ${remote_ip}, ${uri} ${status}\n",

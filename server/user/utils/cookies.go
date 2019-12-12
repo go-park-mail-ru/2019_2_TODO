@@ -93,7 +93,7 @@ func ReadSessionID(ctx echo.Context) *session.SessionID {
 			return &session.SessionID{ID: value["session_id"]}
 		}
 	}
-	return &session.SessionID{ID: "0"}
+	return nil
 }
 
 func ReadSessionIDAndUserID(ctx echo.Context) []string {
