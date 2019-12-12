@@ -185,6 +185,8 @@ func (h *Handlers) handleSignIn(ctx echo.Context) error {
 }
 
 func (h *Handlers) handleSignInGet(ctx echo.Context) error {
+	return nil
+
 	session, err := utils.SessManager.Check(
 		context.Background(),
 		utils.ReadSessionID(ctx),
