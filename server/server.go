@@ -35,5 +35,5 @@ func main() {
 
 	userhttp.NewUserHandler(e, usecase.NewUserUsecase(repository.NewUserMemoryRepository()))
 
-	e.Logger.Fatal(e.StartAutoTLS(utils.ListenAddr))
+	e.Logger.Fatal(e.Start(utils.ListenAddr))
 }

@@ -137,5 +137,5 @@ func main() {
 		return nil
 	})
 
-	e.Logger.Fatal(e.StartAutoTLS(ListenAddr))
+	e.Logger.Fatal(e.Start(ListenAddr))
 }
