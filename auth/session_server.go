@@ -72,4 +72,7 @@ func main() {
 	fmt.Println("starting server at :8080")
 
 	go server.Serve(lis)
+
+	fmt.Println("Press any key to exit")
+	fmt.Scanln()
 }
