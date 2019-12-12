@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -83,18 +82,6 @@ func main() {
 	}
 
 	utils.SessManager = session.NewAuthCheckerClient(grcpConn)
-	log.Println(utils.SessManager)
-
-	sess, err := utils.SessManager.Create(context.Background(),
-		&session.Session{
-			Username: "login",
-			Avatar:   "hello",
-		})
-
-	log.Println(sess)
-	if err != nil {
-		log.Println(err)
-	}
 
 	go runOnlineServiceDiscovery(servers)
 
