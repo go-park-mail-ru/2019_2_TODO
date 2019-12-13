@@ -22,7 +22,7 @@ var cookieHandler = securecookie.New(
 	securecookie.GenerateRandomKey(32),
 )
 
-func SetSession(ctx echo.Context, userData *model.User) error {
+func SetSession(ctx echo.Context, userData *model.User) (*http.Cookie, error) {
 	sessID, err := SessManager.Create(
 		context.Background(),
 		&session.Session{
@@ -30,7 +30,7 @@ func SetSession(ctx echo.Context, userData *model.User) error {
 			Avatar:   userData.Avatar,
 		})
 	if err != nil {
-		return err
+		return nil, err
 	}
 	value := map[string]string{
 		"session_id": sessID.ID,
@@ -46,8 +46,9 @@ func SetSession(ctx echo.Context, userData *model.User) error {
 			Expires: expiration,
 		}
 		ctx.SetCookie(cookie)
+		return cookie, nil
 	}
-	return nil
+	return nil, nil
 }
 
 func ClearSession(ctx echo.Context) error {
@@ -94,7 +95,7 @@ func ReadSessionID(ctx echo.Context) *session.SessionID {
 	return nil
 }
 
-func ReadSessionIDAndUserIDFromRequest(ctx echo.Context) []string {
+func ReadSessionIDAndUserID(ctx echo.Context) []string {
 	if cookie, err := ctx.Request().Cookie("session_token"); err == nil {
 		value := make(map[string]string)
 		if err = cookieHandler.Decode("session_token", cookie.Value, &value); err == nil {
@@ -103,6 +104,17 @@ func ReadSessionIDAndUserIDFromRequest(ctx echo.Context) []string {
 			result = append(result, value["user_id"])
 			return result
 		}
+	}
+	return []string{}
+}
+
+func ReadSessionIDAndUserIDJWT(cookie *http.Cookie) []string {
+	value := make(map[string]string)
+	if err := cookieHandler.Decode("session_token", cookie.Value, &value); err == nil {
+		var result = []string{}
+		result = append(result, value["session_id"])
+		result = append(result, value["user_id"])
+		return result
 	}
 	return []string{}
 }

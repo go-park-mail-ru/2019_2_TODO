@@ -80,8 +80,8 @@ func (tk *JwtToken) parseSecretGetter(token *jwt.Token) (interface{}, error) {
 }
 
 // SetToken - set and sign token and return token and error
-func SetToken(ctx echo.Context) error {
-	session := ReadSessionIDAndUserIDFromRequest(ctx)
+func SetToken(ctx echo.Context, cookieSes *http.Cookie) error {
+	session := ReadSessionIDAndUserIDJWT(cookieSes)
 	log.Println(session)
 
 	token, err := NewJwtToken(Secret)

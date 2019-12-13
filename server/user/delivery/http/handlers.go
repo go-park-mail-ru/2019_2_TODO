@@ -66,16 +66,15 @@ func (h *Handlers) handleSignUp(ctx echo.Context) error {
 	log.Println("Last id: ", lastID)
 	newUserInput.ID = lastID
 
-	if err = utils.SetSession(ctx, newUserInput); err != nil {
+	var cookie *http.Cookie
+	if cookie, err = utils.SetSession(ctx, newUserInput); err != nil {
 		ctx.JSON(http.StatusInternalServerError, "Cookie set error")
 	}
 
-	defer func() {
-		err = utils.SetToken(ctx)
-		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, "Token set error")
-		}
-	}()
+	err = utils.SetToken(ctx, cookie)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, "Token set error")
+	}
 
 	log.Println(newUserInput.Username)
 
@@ -106,16 +105,15 @@ func (h *Handlers) handleSignIn(ctx echo.Context) error {
 	log.Println("UserData: ID - ", userRecord.ID, " Login - ", userRecord.Username,
 		" Avatar - ", userRecord.Avatar)
 
-	if err = utils.SetSession(ctx, userRecord); err != nil {
+	var cookie *http.Cookie
+	if cookie, err = utils.SetSession(ctx, userRecord); err != nil {
 		ctx.JSON(http.StatusInternalServerError, "Cookie set error")
 	}
 
-	defer func() {
-		err = utils.SetToken(ctx)
-		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, "Token set error")
-		}
-	}()
+	err = utils.SetToken(ctx, cookie)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, "Token set error")
+	}
 
 	return nil
 }
@@ -204,7 +202,7 @@ func (h *Handlers) handleChangeProfile(ctx echo.Context) error {
 	}
 	log.Println("Update affectedRows: ", affected)
 
-	if err = utils.SetSession(ctx, changeProfileCredentials); err != nil {
+	if _, err = utils.SetSession(ctx, changeProfileCredentials); err != nil {
 		ctx.JSON(http.StatusInternalServerError, "Cookie set error")
 	}
 
@@ -247,7 +245,7 @@ func (h *Handlers) handleChangeImage(ctx echo.Context) error {
 	}
 	log.Println("Update affectedRows: ", affected)
 
-	if err = utils.SetSession(ctx, changeData); err != nil {
+	if _, err = utils.SetSession(ctx, changeData); err != nil {
 		ctx.JSON(http.StatusInternalServerError, "Cookie set error")
 	}
 
