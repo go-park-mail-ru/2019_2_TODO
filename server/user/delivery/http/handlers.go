@@ -135,13 +135,13 @@ func (h *Handlers) handleSignInGet(ctx echo.Context) error {
 		if cookieUsername == "Resg" {
 			cookieUsernameInput = model.User{
 				Username: cookieUsername,
-				Avatar:   utils.BackIP + cookieAvatar,
+				Avatar:   cookieAvatar,
 				Admin:    true,
 			}
 		} else {
 			cookieUsernameInput = model.User{
 				Username: cookieUsername,
-				Avatar:   utils.BackIP + cookieAvatar,
+				Avatar:   cookieAvatar,
 			}
 		}
 		log.Println(cookieUsernameInput)
