@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/middlewares"
+
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/model"
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/user"
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/user/utils"
@@ -35,8 +37,8 @@ func NewUserHandler(e *echo.Echo, us user.Usecase) {
 
 	e.POST("/signup/", handlers.handleSignUp)
 	e.POST("/signin/", handlers.handleSignIn)
-	e.POST("/signin/profile/", handlers.handleChangeProfile)
-	e.POST("/signin/profileImage/", handlers.handleChangeImage)
+	e.POST("/signin/profile/", handlers.handleChangeProfile, middlewares.JWTMiddlewareCustom)
+	e.POST("/signin/profileImage/", handlers.handleChangeImage, middlewares.JWTMiddlewareCustom)
 }
 
 func (h *Handlers) handlePrometheus(ctx echo.Context) error {
