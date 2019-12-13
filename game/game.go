@@ -17,24 +17,6 @@ const (
 	FrontIP    = "http://93.171.139.195:780"
 )
 
-// var (
-// 	sessManager session.AuthCheckerClient
-// )
-
-// type tokenAuth struct {
-// 	Token string
-// }
-
-// func (t *tokenAuth) GetRequestMetadata(context.Context, ...string) (map[string]string, error) {
-// 	return map[string]string{
-// 		"session_token": t.Token,
-// 	}, nil
-// }
-
-// func (c *tokenAuth) RequireTransportSecurity() bool {
-// 	return false
-// }
-
 type JSONRooms struct {
 	Rooms map[string]int `json:"rooms"`
 }
@@ -70,19 +52,6 @@ func wsHandler(ctx echo.Context) error {
 	if len(params["name"]) > 0 {
 		playerName = params["name"][0]
 	}
-
-	// ctxSes := context.Background()
-	// nothing := &session.Nothing{}
-	// sessionData, err := sessManager.HandleSignInGet(ctxSes, nothing)
-
-	// if err != nil {
-	// 	log.Println("Error while grcp session check")
-	// }
-
-	// emptySession := &session.Session{}
-	// if sessionData != emptySession {
-	// 	playerName = sessionData.GetUsername()
-	// }
 
 	var roomName string = "newRoom"
 	if len(params["roomName"]) > 0 {
@@ -121,20 +90,6 @@ func main() {
 		AllowCredentials: true,
 	}))
 
-	// grcpConn, err := grpc.Dial(
-	// 	utils.BackIP,
-	// 	grpc.WithPerRPCCredentials(&tokenAuth{"session_token"}),
-	// 	grpc.WithInsecure(),
-	// )
-
-	// if err != nil {
-	// 	log.Fatalf("cant connect to grpc")
-	// }
-
-	// defer grcpConn.Close()
-
-	// sessManager = session.NewAuthCheckerClient(grcpConn)
-
 	e.GET("/rooms/", func(ctx echo.Context) error {
 		getRooms(ctx)
 		return nil
@@ -145,5 +100,5 @@ func main() {
 		return nil
 	})
 
-	e.Logger.Fatal(e.Start(ListenAddr))
+	e.Logger.Fatal(e.StartAutoTLS(ListenAddr))
 }
