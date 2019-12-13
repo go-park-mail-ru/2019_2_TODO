@@ -122,7 +122,7 @@ func (h *Handlers) handleSignInGet(ctx echo.Context) error {
 	)
 
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, "Error Checking session")
+		return nil
 	}
 
 	cookieUsername := session.Username
