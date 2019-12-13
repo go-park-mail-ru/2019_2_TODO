@@ -41,11 +41,6 @@ func NewUserHandler(e *echo.Echo, us user.Usecase) {
 	e.POST("/signin/profileImage/", handlers.handleChangeImage, middlewares.JWTMiddlewareCustom)
 }
 
-func (h *Handlers) handlePrometheus(ctx echo.Context) error {
-	promhttp.Handler()
-	return nil
-}
-
 func (h *Handlers) handleSignUp(ctx echo.Context) error {
 	log.Println(utils.SessManager)
 	newUserInput := new(model.User)

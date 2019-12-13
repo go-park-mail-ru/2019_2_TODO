@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/naming"
 
+	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/middlewares"
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/user/repository"
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/user/usecase"
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/user/utils"
@@ -87,7 +88,7 @@ func main() {
 
 	e := echo.New()
 
-	// e.Use(middlewares.MetricsMiddleware())
+	e.Use(middlewares.MetricsMiddleware())
 
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Format: "[${method}] ${remote_ip}, ${uri} ${status}\n",
