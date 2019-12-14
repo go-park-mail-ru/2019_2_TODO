@@ -51,7 +51,6 @@ func (r *Room) run() {
 			// if room is full - delete from freeRooms
 			if len(r.PlayerConns) == 2 {
 				delete(FreeRooms, r.Name)
-
 			}
 
 		case c := <-r.Leave:

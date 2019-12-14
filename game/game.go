@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/game/core"
 
@@ -22,19 +23,34 @@ type JSONRooms struct {
 }
 
 func getRooms(ctx echo.Context) error {
-	if len(core.FreeRooms) == 2 {
-		for i := 0; i < 4; i++ {
-			core.NewRoom("")
+	ws, err := websocket.Upgrade(ctx.Response(), ctx.Request(), nil, 1024, 1024)
+	if _, ok := err.(websocket.HandshakeError); ok {
+		http.Error(ctx.Response(), "Not a websocket handshake", 400)
+		return err
+	} else if err != nil {
+		return err
+	}
+
+	for {
+		if len(core.FreeRooms) == 2 {
+			for i := 0; i < 4; i++ {
+				core.NewRoom("")
+			}
 		}
+		var rooms = map[string]int{}
+		for r, room := range core.FreeRooms {
+			rooms[r] = len(room.PlayerConns)
+		}
+		var jsonRooms = &JSONRooms{
+			Rooms: rooms,
+		}
+		err := ws.WriteJSON(jsonRooms)
+		if err != nil {
+			ws.Close()
+			return err
+		}
+		time.Sleep(1000 * time.Millisecond)
 	}
-	var rooms = map[string]int{}
-	for r, room := range core.FreeRooms {
-		rooms[r] = len(room.PlayerConns)
-	}
-	var jsonRooms = &JSONRooms{
-		Rooms: rooms,
-	}
-	return ctx.JSON(http.StatusOK, jsonRooms)
 }
 
 func wsHandler(ctx echo.Context) error {
