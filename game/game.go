@@ -31,26 +31,29 @@ func getRooms(ctx echo.Context) error {
 		return err
 	}
 
-	for {
-		if len(core.FreeRooms) == 2 {
-			for i := 0; i < 4; i++ {
-				core.NewRoom("")
+	go func() {
+		for {
+			if len(core.FreeRooms) == 2 {
+				for i := 0; i < 4; i++ {
+					core.NewRoom("")
+				}
 			}
+			var rooms = map[string]int{}
+			for r, room := range core.FreeRooms {
+				rooms[r] = len(room.PlayerConns)
+			}
+			var jsonRooms = &JSONRooms{
+				Rooms: rooms,
+			}
+			err := ws.WriteJSON(jsonRooms)
+			if err != nil {
+				ws.Close()
+				break
+			}
+			time.Sleep(1000 * time.Millisecond)
 		}
-		var rooms = map[string]int{}
-		for r, room := range core.FreeRooms {
-			rooms[r] = len(room.PlayerConns)
-		}
-		var jsonRooms = &JSONRooms{
-			Rooms: rooms,
-		}
-		err := ws.WriteJSON(jsonRooms)
-		if err != nil {
-			ws.Close()
-			return err
-		}
-		time.Sleep(1000 * time.Millisecond)
-	}
+	}()
+	return nil
 }
 
 func wsHandler(ctx echo.Context) error {
