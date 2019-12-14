@@ -100,5 +100,5 @@ func main() {
 		return nil
 	})
 
-	e.Logger.Fatal(e.StartTLS(ListenAddr, "cert.crt", "key.crt"))
+	e.Logger.Fatal(e.StartAutoTLS(ListenAddr))
 }
