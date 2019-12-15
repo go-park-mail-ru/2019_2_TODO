@@ -9,6 +9,8 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/auth/session"
+
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/game/leaderBoardModel"
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/middlewares"
 
@@ -129,19 +131,19 @@ func (h *Handlers) handleSignIn(ctx echo.Context) error {
 }
 
 func (h *Handlers) handleSignInGet(ctx echo.Context) error {
-	session, err := utils.SessManager.Check(
-		context.Background(),
-		utils.ReadSessionID(ctx),
-	)
-
-	if err != nil {
-		return nil
-	}
-
 	sessIDAndUserID := utils.ReadSessionIDAndUserID(ctx)
-
 	if sessIDAndUserID == nil {
 		return ctx.JSON(http.StatusInternalServerError, "Not ok")
+	}
+
+	session, err := utils.SessManager.Check(
+		context.Background(),
+		&session.SessionID{
+			ID: sessIDAndUserID[0],
+		},
+	)
+	if err != nil {
+		return nil
 	}
 
 	userID, err := strconv.Atoi(sessIDAndUserID[1])

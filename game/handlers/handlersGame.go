@@ -80,25 +80,19 @@ func (h *HandlersGame) WsHandler(ctx echo.Context) error {
 	}
 
 	params, err := url.ParseQuery(ctx.Request().URL.RawQuery)
-	if err != nil || !(len(params["session_token"]) > 0) {
+	if err != nil || !(len(params["id"]) > 0) {
 		return ctx.JSON(http.StatusInternalServerError, "Smth wrong with parseQuery")
 	}
-	log.Println(params["session_token"][0])
 
-	// cookieSessionID := ReadSessionIDAndUserID(params["session_token"][0])
-	// if cookieSessionID == nil {
-	// 	return ctx.JSON(http.StatusUnauthorized, "Firstly log in")
-	// }
+	userID, err := strconv.Atoi(params["id"][0])
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, "Smth wrong with cookie")
+	}
 
-	// userID, err := strconv.Atoi(cookieSessionID[1])
-	// if err != nil {
-	// 	return ctx.JSON(http.StatusInternalServerError, "Smth wrong with cookie")
-	// }
-
-	// user, err := h.Usecase.SelectLeaderByID(int64(userID))
-	// if err != nil {
-	// 	return ctx.JSON(http.StatusInternalServerError, "Smth wrong with database")
-	// }
+	user, err := h.Usecase.SelectLeaderByID(int64(userID))
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, "Smth wrong with database")
+	}
 
 	playerName := user.Username
 	playerStartChips, err := strconv.Atoi(user.Points)
