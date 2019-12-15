@@ -11,11 +11,14 @@ import (
 // NewUserMemoryRepository - create connection and return new repository
 func NewUserMemoryRepository() *LeadersRepository {
 	dsn := utils.DataBaseConfig
-	dsn += "&charset=utf8"
-	dsn += "&interpolateParams=true"
+	// dsn += "&charset=utf8"
+	// dsn += "&interpolateParams=true"
 
 	db, err := sql.Open("mysql", dsn)
-
+	if err != nil {
+		log.Println(err)
+	}
+	db.SetMaxOpenConns(10)
 	err = db.Ping()
 	if err != nil {
 		log.Println("Error while Ping", err)
