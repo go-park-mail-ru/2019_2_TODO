@@ -14,6 +14,10 @@ import (
 	"github.com/labstack/echo"
 )
 
+const (
+	LEADERSSIZE int = 10
+)
+
 type HandlersGame struct {
 	Usecase *repository.LeadersRepository
 }
@@ -107,8 +111,28 @@ func (h *HandlersGame) LeaderBoardTopHandler(ctx echo.Context) error {
 	}
 
 	result := &JSONLeaders{
-		Leaders: leaders,
+		Leaders: partitionSort(leaders),
 	}
 
 	return ctx.JSON(http.StatusOK, result)
+}
+
+func partitionSort(leaders []*leaderBoardModel.UserLeaderBoard) []*leaderBoardModel.UserLeaderBoard {
+	var result []*leaderBoardModel.UserLeaderBoard
+
+	var tmp *leaderBoardModel.UserLeaderBoard = &leaderBoardModel.UserLeaderBoard{}
+	for i := 0; i < LEADERSSIZE; i++ {
+		tmp = leaders[0]
+		var j int = 1
+		for j = 1; j < len(leaders); j++ {
+			if leaders[j].Points > tmp.Points {
+				tmp = leaders[j]
+			}
+		}
+		result = append(result, tmp)
+		leaders[j] = leaders[len(leaders)-1]
+		leaders[len(leaders)-1] = nil
+		leaders = leaders[:len(leaders)-1]
+	}
+	return result
 }
