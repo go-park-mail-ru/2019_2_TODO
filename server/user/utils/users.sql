@@ -21,7 +21,7 @@ CREATE TABLE `leaderboard` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 INSERT INTO `users` (`id`, `login`, `password`, `avatar`) VALUES
-(11,	'lowSkill', '1234', 'images/avatar');
+(11,	'theBest', '123', 'images/avatar');
 
 INSERT INTO `leaderboard` (`id`, `username`, `points`) VALUES
-(11,	'lowSkill', '1001');
+(11,	'theBest', '1001');
