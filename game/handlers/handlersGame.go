@@ -171,11 +171,3 @@ func partitionSort(leaders []*leaderBoardModel.UserLeaderBoard) []*leaderBoardMo
 	}
 	return result
 }
-
-func (h *HandlersGame) EndGameUpdateMoney(userData *leaderBoardModel.UserLeaderBoard) error {
-	_, err := h.Usecase.UpdateLeader(userData)
-	if err != nil {
-		return err
-	}
-	return nil
-}
