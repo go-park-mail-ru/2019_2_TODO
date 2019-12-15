@@ -40,6 +40,7 @@ var (
 const (
 	ListenAddr = "172.26.112.3:443"
 	FrontIP    = "http://93.171.139.195:780"
+	FrontIPNew = "https://www.pokertodo.ru:743"
 )
 
 func main() {
@@ -100,7 +101,7 @@ func main() {
 	}))
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins:     []string{FrontIP},
+		AllowOrigins:     []string{FrontIP, FrontIPNew},
 		AllowMethods:     []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
 		AllowCredentials: true,
 	}))
