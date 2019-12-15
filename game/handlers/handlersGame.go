@@ -84,6 +84,7 @@ func (h *HandlersGame) WsHandler(ctx echo.Context) error {
 	if err != nil || !(len(params["session_token"]) > 0) {
 		return ctx.JSON(http.StatusInternalServerError, "Smth wrong with parseQuery")
 	}
+	log.Println(params["session_token"][0])
 
 	cookieSessionID := ReadSessionIDAndUserID(params["session_token"][0])
 	if cookieSessionID == nil {
@@ -172,6 +173,7 @@ func partitionSort(leaders []*leaderBoardModel.UserLeaderBoard) []*leaderBoardMo
 func ReadSessionIDAndUserID(cookie string) []string {
 	value := make(map[string]string)
 	if err := utils.CookieHandler.Decode("session_token", cookie, &value); err == nil {
+		log.Println("Im here")
 		var result = []string{}
 		result = append(result, value["session_id"])
 		result = append(result, value["user_id"])
