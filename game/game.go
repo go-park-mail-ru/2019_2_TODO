@@ -19,6 +19,8 @@ import (
 	"github.com/labstack/echo/middleware"
 
 	consulapi "github.com/hashicorp/consul/api"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 var (
