@@ -9,10 +9,10 @@ import (
 
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/auth/session"
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/game/leaderBoardModel"
-	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/user/utils"
 
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/game/core"
 	repository "github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/game/repositoryLeaders"
+	"github.com/gorilla/securecookie"
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo"
 )
@@ -72,12 +72,20 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 }
 
 func (h *HandlersGame) WsHandler(ctx echo.Context) error {
+	ws, err := websocket.Upgrade(ctx.Response(), ctx.Request(), nil, 1024, 1024)
+	if _, ok := err.(websocket.HandshakeError); ok {
+		http.Error(ctx.Response(), "Not a websocket handshake", 400)
+		return err
+	} else if err != nil {
+		return err
+	}
+
 	params, err := url.ParseQuery(ctx.Request().URL.RawQuery)
-	if err != nil {
+	if err != nil || !(len(params["session_token"]) > 0) {
 		return ctx.JSON(http.StatusInternalServerError, "Smth wrong with parseQuery")
 	}
 
-	cookieSessionID := utils.ReadSessionIDAndUserID(ctx)
+	cookieSessionID := ReadSessionIDAndUserID(params["session_token"][0])
 	if cookieSessionID == nil {
 		return ctx.JSON(http.StatusUnauthorized, "Firstly log in")
 	}
@@ -90,14 +98,6 @@ func (h *HandlersGame) WsHandler(ctx echo.Context) error {
 	user, err := h.Usecase.SelectLeaderByID(int64(userID))
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, "Smth wrong with database")
-	}
-
-	ws, err := websocket.Upgrade(ctx.Response(), ctx.Request(), nil, 1024, 1024)
-	if _, ok := err.(websocket.HandshakeError); ok {
-		http.Error(ctx.Response(), "Not a websocket handshake", 400)
-		return err
-	} else if err != nil {
-		return err
 	}
 
 	playerName := user.Username
@@ -167,4 +167,20 @@ func partitionSort(leaders []*leaderBoardModel.UserLeaderBoard) []*leaderBoardMo
 		leaders = leaders[:len(leaders)-1]
 	}
 	return result
+}
+
+var cookieHandler = securecookie.New(
+	securecookie.GenerateRandomKey(64),
+	securecookie.GenerateRandomKey(32),
+)
+
+func ReadSessionIDAndUserID(cookie string) []string {
+	value := make(map[string]string)
+	if err := cookieHandler.Decode("session_token", cookie, &value); err == nil {
+		var result = []string{}
+		result = append(result, value["session_id"])
+		result = append(result, value["user_id"])
+		return result
+	}
+	return nil
 }
