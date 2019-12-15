@@ -15,7 +15,6 @@ func NewUserMemoryRepository() *LeadersRepository {
 	dsn += "&interpolateParams=true"
 
 	db, err := sql.Open("mysql", dsn)
-	db.SetMaxOpenConns(10)
 
 	err = db.Ping()
 	if err != nil {
