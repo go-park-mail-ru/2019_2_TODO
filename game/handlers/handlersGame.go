@@ -72,14 +72,6 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 }
 
 func (h *HandlersGame) WsHandler(ctx echo.Context) error {
-	ws, err := websocket.Upgrade(ctx.Response(), ctx.Request(), nil, 1024, 1024)
-	if _, ok := err.(websocket.HandshakeError); ok {
-		http.Error(ctx.Response(), "Not a websocket handshake", 400)
-		return err
-	} else if err != nil {
-		return err
-	}
-
 	params, err := url.ParseQuery(ctx.Request().URL.RawQuery)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, "Smth wrong with parseQuery")
@@ -98,6 +90,14 @@ func (h *HandlersGame) WsHandler(ctx echo.Context) error {
 	user, err := h.Usecase.SelectLeaderByID(int64(userID))
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, "Smth wrong with database")
+	}
+
+	ws, err := websocket.Upgrade(ctx.Response(), ctx.Request(), nil, 1024, 1024)
+	if _, ok := err.(websocket.HandshakeError); ok {
+		http.Error(ctx.Response(), "Not a websocket handshake", 400)
+		return err
+	} else if err != nil {
+		return err
 	}
 
 	playerName := user.Username

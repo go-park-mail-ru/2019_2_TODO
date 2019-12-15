@@ -116,5 +116,5 @@ func ReadSessionIDAndUserIDJWT(cookie *http.Cookie) []string {
 		result = append(result, value["user_id"])
 		return result
 	}
-	return []string{}
+	return nil
 }
