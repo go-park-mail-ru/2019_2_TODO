@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/game/leaderBoardModel"
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/middlewares"
 
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/model"
@@ -58,6 +59,17 @@ func (h *Handlers) handleSignUp(ctx echo.Context) error {
 	if err != nil {
 		log.Println("Items.Create err:", err)
 		return ctx.JSON(http.StatusInternalServerError, "")
+	}
+
+	userLeader := &leaderBoardModel.UserLeaderBoard{
+		ID:       lastID,
+		Username: newUserInput.Username,
+		Points:   "1000",
+	}
+
+	_, err = h.Users.CreateLeader(userLeader)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, "LeaderBoard Error")
 	}
 
 	log.Println("Last id: ", lastID)
@@ -184,6 +196,16 @@ func (h *Handlers) handleChangeProfile(ctx echo.Context) error {
 	changeProfileCredentials.Avatar = oldData.Avatar
 	if changeProfileCredentials.Username == "" {
 		changeProfileCredentials.Username = oldData.Username
+	} else {
+		elem, err := h.Users.SelectLeaderByID(changeProfileCredentials.ID)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, "LeaderBoard Error")
+		}
+		elem.Username = changeProfileCredentials.Username
+		_, err = h.Users.UpdateLeader(elem)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, "LeaderBoard Error")
+		}
 	}
 
 	if changeProfileCredentials.Password == "" {

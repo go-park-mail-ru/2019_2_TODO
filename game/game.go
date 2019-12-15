@@ -33,10 +33,6 @@ var (
 	servers      []string
 )
 
-var (
-	SessManager session.AuthCheckerClient
-)
-
 const (
 	ListenAddr = "172.26.112.3:443"
 	FrontIP    = "http://93.171.139.195:780"
@@ -90,7 +86,7 @@ func main() {
 		nameResolver.w.inject(updates)
 	}
 
-	SessManager = session.NewAuthCheckerClient(grcpConn)
+	handlers.SessManager = session.NewAuthCheckerClient(grcpConn)
 
 	go runOnlineServiceDiscovery(servers)
 

@@ -105,7 +105,7 @@ func ReadSessionIDAndUserID(ctx echo.Context) []string {
 			return result
 		}
 	}
-	return []string{}
+	return nil
 }
 
 func ReadSessionIDAndUserIDJWT(cookie *http.Cookie) []string {

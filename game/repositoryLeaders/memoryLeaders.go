@@ -66,19 +66,6 @@ func (repo *LeadersRepository) SelectLeaderByID(id int64) (*leaderBoardModel.Use
 	return record, nil
 }
 
-// Create - create new user in dataBase with default avatar
-func (repo *LeadersRepository) CreateLeader(elem *leaderBoardModel.UserLeaderBoard) (int64, error) {
-	result, err := repo.DB.Exec(
-		"INSERT INTO leaderboard (`username`, `points`) VALUES (?, ?)",
-		elem.Username,
-		elem.Points,
-	)
-	if err != nil {
-		return 0, err
-	}
-	return result.LastInsertId()
-}
-
 // Update - update user`s data in DataBase
 func (repo *LeadersRepository) UpdateLeader(elem *leaderBoardModel.UserLeaderBoard) (int64, error) {
 	result, err := repo.DB.Exec(
