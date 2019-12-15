@@ -57,8 +57,7 @@ func (repo *UsersRepository) ListAll() ([]*model.User, error) {
 // CreateLeader - create new user in leaderboard
 func (repo *UsersRepository) CreateLeader(elem *leaderBoardModel.UserLeaderBoard) (int64, error) {
 	result, err := repo.DB.Exec(
-		"INSERT INTO leaderboard (`id`, `username`, `points`) VALUES (?, ?)",
-		elem.ID,
+		"INSERT INTO leaderboard (`username`, `points`) VALUES (?, ?)",
 		elem.Username,
 		elem.Points,
 	)
