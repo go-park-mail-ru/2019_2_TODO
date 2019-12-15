@@ -147,22 +147,21 @@ func partitionSort(leaders []*leaderBoardModel.UserLeaderBoard) []*leaderBoardMo
 	for i := 0; i < LEADERSSIZE; i++ {
 		tmp = leaders[0]
 		maxIndex = 0
-		log.Println(tmp, maxIndex)
+
 		for j := 1; j < len(leaders); j++ {
 			if leaders[j].Points > tmp.Points {
 				tmp = leaders[j]
 				maxIndex = j
-				log.Println(tmp, maxIndex)
 			}
 		}
 
+		log.Println(tmp)
+		log.Println(maxIndex)
 		result = append(result, tmp)
-		log.Println(result)
 
 		leaders[maxIndex] = leaders[len(leaders)-1]
 		leaders[len(leaders)-1] = nil
 		leaders = leaders[:len(leaders)-1]
-		log.Println(leaders)
 	}
 	return result
 }
