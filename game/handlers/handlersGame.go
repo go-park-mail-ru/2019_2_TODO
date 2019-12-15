@@ -171,8 +171,9 @@ func partitionSort(leaders []*leaderBoardModel.UserLeaderBoard) []*leaderBoardMo
 }
 
 func ReadSessionIDAndUserID(cookie string) []string {
+	cookieStr := "session_token" + cookie
 	value := make(map[string]string)
-	if err := utils.CookieHandler.Decode("session_token", cookie, &value); err == nil {
+	if err := utils.CookieHandler.Decode("session_token", cookieStr, &value); err == nil {
 		log.Println("Im here")
 		var result = []string{}
 		result = append(result, value["session_id"])
