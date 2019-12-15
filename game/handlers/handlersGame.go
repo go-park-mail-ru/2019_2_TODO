@@ -126,7 +126,6 @@ func (h *HandlersGame) WsHandler(ctx echo.Context) error {
 
 func (h *HandlersGame) LeaderBoardTopHandler(ctx echo.Context) error {
 	leaders, err := h.Usecase.ListAllLeaders()
-	log.Println(leaders)
 	if err != nil {
 		return err
 	}
