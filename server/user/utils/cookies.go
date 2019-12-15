@@ -17,7 +17,7 @@ var (
 	SessManager session.AuthCheckerClient
 )
 
-var CookieHandler = securecookie.New(
+var cookieHandler = securecookie.New(
 	securecookie.GenerateRandomKey(64),
 	securecookie.GenerateRandomKey(32),
 )
@@ -37,7 +37,7 @@ func SetSession(ctx echo.Context, userData *model.User) (*http.Cookie, error) {
 		"user_id":    strconv.Itoa(int(userData.ID)),
 	}
 
-	if encoded, err := CookieHandler.Encode("session_token", value); err == nil {
+	if encoded, err := cookieHandler.Encode("session_token", value); err == nil {
 		expiration := time.Now().Add(24 * time.Hour)
 		cookie := &http.Cookie{
 			Name:    "session_token",
@@ -88,7 +88,7 @@ func ReadSessionID(ctx echo.Context) *session.SessionID {
 	if cookie, err := ctx.Request().Cookie("session_token"); err == nil {
 		log.Println(cookie.Value)
 		value := make(map[string]string)
-		if err = CookieHandler.Decode("session_token", cookie.Value, &value); err == nil {
+		if err = cookieHandler.Decode("session_token", cookie.Value, &value); err == nil {
 			return &session.SessionID{ID: value["session_id"]}
 		}
 	}
@@ -98,7 +98,7 @@ func ReadSessionID(ctx echo.Context) *session.SessionID {
 func ReadSessionIDAndUserID(ctx echo.Context) []string {
 	if cookie, err := ctx.Request().Cookie("session_token"); err == nil {
 		value := make(map[string]string)
-		if err = CookieHandler.Decode("session_token", cookie.Value, &value); err == nil {
+		if err = cookieHandler.Decode("session_token", cookie.Value, &value); err == nil {
 			var result = []string{}
 			result = append(result, value["session_id"])
 			result = append(result, value["user_id"])
@@ -110,7 +110,7 @@ func ReadSessionIDAndUserID(ctx echo.Context) []string {
 
 func ReadSessionIDAndUserIDJWT(cookie *http.Cookie) []string {
 	value := make(map[string]string)
-	if err := CookieHandler.Decode("session_token", cookie.Value, &value); err == nil {
+	if err := cookieHandler.Decode("session_token", cookie.Value, &value); err == nil {
 		var result = []string{}
 		result = append(result, value["session_id"])
 		result = append(result, value["user_id"])

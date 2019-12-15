@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/game/leaderBoardModel"
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/middlewares"
@@ -137,6 +138,16 @@ func (h *Handlers) handleSignInGet(ctx echo.Context) error {
 		return nil
 	}
 
+	sessIDAndUserID := utils.ReadSessionIDAndUserID(ctx)
+
+	if sessIDAndUserID == nil {
+		return ctx.JSON(http.StatusInternalServerError, "Not ok")
+	}
+
+	userID, err := strconv.Atoi(sessIDAndUserID[1])
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, "Not ok")
+	}
 	cookieUsername := session.Username
 	cookieAvatar := session.Avatar
 
@@ -146,12 +157,14 @@ func (h *Handlers) handleSignInGet(ctx echo.Context) error {
 		cookieUsernameInput := model.User{}
 		if cookieUsername == "Resg" {
 			cookieUsernameInput = model.User{
+				ID:       int64(userID),
 				Username: cookieUsername,
 				Avatar:   cookieAvatar,
 				Admin:    true,
 			}
 		} else {
 			cookieUsernameInput = model.User{
+				ID:       int64(userID),
 				Username: cookieUsername,
 				Avatar:   cookieAvatar,
 			}
