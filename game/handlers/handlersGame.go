@@ -9,10 +9,10 @@ import (
 
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/auth/session"
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/game/leaderBoardModel"
+	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/user/utils"
 
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/game/core"
 	repository "github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/game/repositoryLeaders"
-	"github.com/gorilla/securecookie"
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo"
 )
@@ -169,14 +169,9 @@ func partitionSort(leaders []*leaderBoardModel.UserLeaderBoard) []*leaderBoardMo
 	return result
 }
 
-var cookieHandler = securecookie.New(
-	securecookie.GenerateRandomKey(64),
-	securecookie.GenerateRandomKey(32),
-)
-
 func ReadSessionIDAndUserID(cookie string) []string {
 	value := make(map[string]string)
-	if err := cookieHandler.Decode("session_token", cookie, &value); err == nil {
+	if err := utils.CookieHandler.Decode("session_token", cookie, &value); err == nil {
 		var result = []string{}
 		result = append(result, value["session_id"])
 		result = append(result, value["user_id"])
