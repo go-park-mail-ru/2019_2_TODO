@@ -18,7 +18,7 @@ func NewUserMemoryRepository() *LeadersRepository {
 
 	err = db.Ping()
 	if err != nil {
-		log.Println("Error while Ping")
+		log.Println("Error while Ping", err)
 	}
 
 	return &LeadersRepository{
