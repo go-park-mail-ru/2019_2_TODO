@@ -114,7 +114,7 @@ func (h *HandlersGame) WsHandler(ctx echo.Context) error {
 	}
 
 	// Create Player and Conn
-	player := core.NewPlayer(playerName, playerStartChips)
+	player := core.NewPlayer(userID, playerName, playerStartChips)
 	pConn := core.NewPlayerConn(ws, player, room)
 	// Join Player to room
 	room.Join <- pConn
@@ -170,4 +170,12 @@ func partitionSort(leaders []*leaderBoardModel.UserLeaderBoard) []*leaderBoardMo
 
 	}
 	return result
+}
+
+func (h *HandlersGame) EndGameUpdateMoney(userData *leaderBoardModel.UserLeaderBoard) error {
+	_, err := h.Usecase.UpdateLeader(userData)
+	if err != nil {
+		return err
+	}
+	return nil
 }
