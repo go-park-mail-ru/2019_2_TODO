@@ -108,8 +108,7 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 			// log.Println(playersInRoom)
 
 			msg := &JSONRooms{
-				Rooms:    rooms,
-				Username: "hello",
+				Rooms: rooms,
 			}
 
 			err := ws.WriteJSON(msg)
