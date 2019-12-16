@@ -104,10 +104,7 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 				})
 			}
 
-			var jsonRooms = &JSONRooms{
-				Rooms: rooms,
-			}
-			err := ws.WriteJSON(jsonRooms)
+			err := ws.WriteJSON(rooms)
 			if err != nil {
 				log.Println(err)
 				ws.Close()
