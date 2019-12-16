@@ -63,29 +63,36 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 					core.NewRoom("")
 				}
 			}
+			// var rooms = map[string]*RoomsInside{}
+			// var playersInRoom = []*PlayerInRoom{}
+			// for r, room := range core.FreeRooms {
+			// 	if len(room.PlayerConns) > 0 {
+			// 		for pl := range room.PlayerConns {
+			// 			userData, err := h.Usecase.SelectUserByID(int64(pl.ID))
+			// 			if err != nil {
+			// 				log.Println(err)
+			// 				break
+			// 			}
+			// 			player := &PlayerInRoom{
+			// 				username: userData.Username,
+			// 				avatar:   userData.Avatar,
+			// 			}
+			// 			playersInRoom = append(playersInRoom, player)
+			// 		}
+			// 	}
+			// 	rooms[r] = &RoomsInside{
+			// 		places:       2,
+			// 		actualPlaces: len(room.PlayerConns),
+			// 		players:      playersInRoom,
+			// 	}
+			// }
+
 			var rooms = map[string]*RoomsInside{}
-			var playersInRoom = []*PlayerInRoom{}
-			for r, room := range core.FreeRooms {
-				if len(room.PlayerConns) > 0 {
-					for pl := range room.PlayerConns {
-						userData, err := h.Usecase.SelectUserByID(int64(pl.ID))
-						if err != nil {
-							log.Println(err)
-							break
-						}
-						player := &PlayerInRoom{
-							username: userData.Username,
-							avatar:   userData.Avatar,
-						}
-						playersInRoom = append(playersInRoom, player)
-					}
-				}
-				rooms[r] = &RoomsInside{
-					places:       2,
-					actualPlaces: len(room.PlayerConns),
-					players:      playersInRoom,
-				}
+			for r, _ := range core.FreeRooms {
+				rooms[r] = &RoomsInside{}
+				break
 			}
+
 			var jsonRooms = &JSONRooms{
 				Rooms: rooms,
 			}
