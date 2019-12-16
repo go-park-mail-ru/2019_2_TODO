@@ -43,7 +43,8 @@ type JSONPlayersInRoom struct {
 
 type JSONRooms struct {
 	// Rooms map[string]*RoomsInside `json:"rooms"`
-	Rooms map[string]int `json:"rooms"`
+	Rooms    map[string]int `json:"rooms"`
+	Username string         `json:"username"`
 }
 
 type JSONLeaders struct {
@@ -107,7 +108,8 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 			// log.Println(playersInRoom)
 
 			msg := &JSONRooms{
-				Rooms: rooms,
+				Rooms:    rooms,
+				Username: "hello",
 			}
 
 			err := ws.WriteJSON(msg)
