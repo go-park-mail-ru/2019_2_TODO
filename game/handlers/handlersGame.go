@@ -36,7 +36,6 @@ type RoomsInside struct {
 }
 
 type JSONRooms struct {
-	// Rooms map[string]int `json:"rooms"`
 	Rooms map[string]*RoomsInside `json:"rooms"`
 }
 
@@ -86,6 +85,7 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 					actualPlaces: len(room.PlayerConns),
 					players:      playersInRoom,
 				}
+				log.Println(rooms[r])
 			}
 
 			var jsonRooms = &JSONRooms{
