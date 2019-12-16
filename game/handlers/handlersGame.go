@@ -87,7 +87,7 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 				}
 				log.Println(rooms[r])
 			}
-
+			log.Println(rooms)
 			var jsonRooms = &JSONRooms{
 				Rooms: rooms,
 			}
