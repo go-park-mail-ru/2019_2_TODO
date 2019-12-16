@@ -85,14 +85,13 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 					actualPlaces: len(room.PlayerConns),
 					players:      playersInRoom,
 				}
-				log.Println(rooms[r])
 			}
-			log.Println(rooms)
 			var jsonRooms = &JSONRooms{
 				Rooms: rooms,
 			}
 			err := ws.WriteJSON(jsonRooms)
 			if err != nil {
+				log.Println(err)
 				ws.Close()
 				break
 			}
