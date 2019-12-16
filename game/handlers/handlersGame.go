@@ -86,6 +86,12 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 					players:      playersInRoom,
 				}
 			}
+			for i, j := range rooms {
+				log.Println(i)
+				log.Println(j)
+				log.Println(j.players)
+			}
+
 			var jsonRooms = &JSONRooms{
 				Rooms: rooms,
 			}
