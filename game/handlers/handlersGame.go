@@ -69,18 +69,15 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 			for r, room := range core.FreeRooms {
 				for pl := range room.PlayerConns {
 					userData, err := h.Usecase.SelectUserByID(int64(pl.ID))
-					log.Println(userData)
 					if err != nil {
 						log.Println(err)
-						return
+						break
 					}
 					player := &PlayerInRoom{
 						username: userData.Username,
 						avatar:   userData.Avatar,
 					}
-					log.Println(player)
 					playersInRoom = append(playersInRoom, player)
-					log.Println(playersInRoom)
 				}
 				rooms[r] = &RoomsInside{
 					places:       2,
