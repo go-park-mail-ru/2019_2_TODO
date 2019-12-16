@@ -104,20 +104,11 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 				rooms[r] = roomInside
 			}
 
-			// var rooms = []*JSONRoom{}
-			// for r, _ := range core.FreeRooms {
-			// 	rooms = append(rooms, &JSONRoom{
-			// 		room:   r,
-			// 		places: 2,
+			msg := &JSONRooms{
+				Rooms: rooms,
+			}
 
-			// 		roomInside: &RoomsInside{
-			// 			places: 2,
-			// 		},
-			// 	})
-			// }
-			// log.Println(rooms[0])
-
-			err := ws.WriteJSON(rooms)
+			err := ws.WriteJSON(msg)
 
 			if err != nil {
 				log.Println(err)
