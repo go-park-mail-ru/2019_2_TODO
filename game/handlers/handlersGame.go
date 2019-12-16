@@ -36,7 +36,9 @@ type RoomsInside struct {
 }
 
 type JSONPlayersInRoom struct {
-	players map[string]string `json:"players"`
+	// players map[string]string `json:"players"`
+	username string `json:"username"`
+	avatar   string `json:"avatar"`
 }
 
 type JSONRooms struct {
@@ -96,7 +98,6 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 			// msg := &JSONRooms{
 			// 	Rooms: rooms,
 			// }
-			playersInRoom["123"] = "123123"
 			for i, j := range playersInRoom {
 				log.Println(i)
 				log.Println(j)
@@ -104,8 +105,9 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 
 			log.Println(playersInRoom)
 
-			msg := JSONPlayersInRoom{
-				players: playersInRoom,
+			msg := &JSONPlayersInRoom{
+				username: "123",
+				avatar:   "123",
 			}
 
 			err := ws.WriteJSON(msg)
