@@ -48,7 +48,7 @@ var (
 )
 
 func (h *HandlersGame) GetRooms(ctx echo.Context) error {
-	ws, err := websocket.Upgrade(ctx.Response(), ctx.Request(), nil, 1024, 1024)
+	ws, err := websocket.Upgrade(ctx.Response(), ctx.Request(), nil, 4096, 4096)
 	if _, ok := err.(websocket.HandshakeError); ok {
 		http.Error(ctx.Response(), "Not a websocket handshake", 400)
 		return err
@@ -86,13 +86,6 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 					players:      playersInRoom,
 				}
 			}
-			for i, j := range rooms {
-				log.Println(i)
-				log.Println(j)
-				log.Println(j.players)
-				_ = ws.WriteMessage(websocket.TextMessage, []byte(i))
-			}
-
 			var jsonRooms = &JSONRooms{
 				Rooms: rooms,
 			}
