@@ -24,8 +24,20 @@ type HandlersGame struct {
 	Usecase *repository.LeadersRepository
 }
 
+type PlayerInRoom struct {
+	username string `json:"username"`
+	avatar   string `json:"avatar"`
+}
+
+type RoomsInside struct {
+	places       int             `json:"places"`
+	actualPlaces int             `json:"actualPlaces"`
+	players      []*PlayerInRoom `json:"players"`
+}
+
 type JSONRooms struct {
-	Rooms map[string]int `json:"rooms"`
+	// Rooms map[string]int `json:"rooms"`
+	Rooms map[string]*RoomsInside `json:"rooms"`
 }
 
 type JSONLeaders struct {
@@ -52,10 +64,28 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 					core.NewRoom("")
 				}
 			}
-			var rooms = map[string]int{}
+			var rooms = map[string]*RoomsInside{}
+			var playersInRoom = []*PlayerInRoom{}
 			for r, room := range core.FreeRooms {
-				rooms[r] = len(room.PlayerConns)
+				for pl := range room.PlayerConns {
+					userData, err := h.Usecase.SelectUserByID(int64(pl.ID))
+					if err != nil {
+						log.Println(err)
+						return
+					}
+					player := &PlayerInRoom{
+						username: userData.Username,
+						avatar:   userData.Avatar,
+					}
+					playersInRoom = append(playersInRoom, player)
+				}
+				rooms[r] = &RoomsInside{
+					places:       2,
+					actualPlaces: len(room.PlayerConns),
+					players:      playersInRoom,
+				}
 			}
+
 			var jsonRooms = &JSONRooms{
 				Rooms: rooms,
 			}

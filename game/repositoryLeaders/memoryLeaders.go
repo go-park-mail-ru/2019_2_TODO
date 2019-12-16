@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/game/leaderBoardModel"
+	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/model"
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/user/utils"
 )
 
@@ -60,6 +61,18 @@ func (repo *LeadersRepository) SelectLeaderByID(id int64) (*leaderBoardModel.Use
 	err := repo.DB.
 		QueryRow("SELECT id, username, points FROM leaderboard WHERE id = ?", id).
 		Scan(&record.ID, &record.Username, &record.Points)
+	if err != nil {
+		return nil, err
+	}
+	return record, nil
+}
+
+// SelectByID - select all user`s data by ID
+func (repo *LeadersRepository) SelectUserByID(id int64) (*model.User, error) {
+	record := &model.User{}
+	err := repo.DB.
+		QueryRow("SELECT id, login, password, avatar FROM users WHERE id = ?", id).
+		Scan(&record.ID, &record.Username, &record.Password, &record.Avatar)
 	if err != nil {
 		return nil, err
 	}
