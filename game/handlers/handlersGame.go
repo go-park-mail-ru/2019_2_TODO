@@ -107,7 +107,8 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 			}
 			log.Println(rooms[0])
 
-			err := ws.WriteJSON(rooms[0].roomInside)
+			// err := ws.WriteJSON(rooms[0].roomInside)
+			err := ws.WriteMessage(websocket.TextMessage, []byte(rooms[0].room))
 			if err != nil {
 				log.Println(err)
 				ws.Close()
