@@ -90,6 +90,7 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 				log.Println(i)
 				log.Println(j)
 				log.Println(j.players)
+				_ = ws.WriteMessage(websocket.TextMessage, []byte(i))
 			}
 
 			var jsonRooms = &JSONRooms{
