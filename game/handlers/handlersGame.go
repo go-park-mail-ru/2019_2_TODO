@@ -39,15 +39,6 @@ type JSONRooms struct {
 	Rooms map[string]*RoomsInside `json:"rooms"`
 }
 
-// type JSONRoom struct {
-// 	room       string       `json:"room"`
-// 	roomInside *RoomsInside `json:"roomInside"`
-// }
-
-// type JSONRooms struct {
-// 	Rooms []*JSONRoom `json:"rooms"`
-// }
-
 type JSONLeaders struct {
 	Leaders []*leaderBoardModel.UserLeaderBoard `json:"leaders"`
 }
@@ -102,13 +93,19 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 					players:      playersInRoom,
 				}
 				rooms[r] = roomInside
+				log.Println(rooms[r])
+				log.Println(roomInside)
 			}
 
 			msg := &JSONRooms{
 				Rooms: rooms,
 			}
 
-			err := ws.WriteJSON(msg)
+			mssg := []*JSONRooms{}
+			mssg = append(mssg, msg)
+			mssg = append(mssg, msg)
+
+			err := ws.WriteJSON(mssg)
 
 			if err != nil {
 				log.Println(err)
