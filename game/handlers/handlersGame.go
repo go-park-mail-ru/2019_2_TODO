@@ -30,9 +30,9 @@ type PlayerInRoom struct {
 }
 
 type RoomsInside struct {
-	places       int             `json:"places"`
-	actualPlaces int             `json:"actualPlaces"`
-	players      []*PlayerInRoom `json:"players"`
+	places       int `json:"places"`
+	actualPlaces int `json:"actualPlaces"`
+	// players      []*PlayerInRoom `json:"players"`
 }
 
 type JSONRooms struct {
@@ -41,13 +41,6 @@ type JSONRooms struct {
 
 type JSONLeaders struct {
 	Leaders []*leaderBoardModel.UserLeaderBoard `json:"leaders"`
-}
-
-type JSONRoom struct {
-	room         string          `json:"room"`
-	places       int             `json:"places"`
-	actualPlaces int             `json:"actualPlaces"`
-	players      []*PlayerInRoom `json:"players"`
 }
 
 var (
@@ -90,22 +83,16 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 				roomInside := &RoomsInside{
 					places:       2,
 					actualPlaces: len(room.PlayerConns),
-					players:      playersInRoom,
+					// players:      playersInRoom,
 				}
 				rooms[r] = roomInside
-				log.Println(rooms[r])
-				log.Println(roomInside)
 			}
 
 			msg := &JSONRooms{
 				Rooms: rooms,
 			}
 
-			mssg := []*JSONRooms{}
-			mssg = append(mssg, msg)
-			mssg = append(mssg, msg)
-
-			err := ws.WriteJSON(mssg)
+			err := ws.WriteJSON(msg)
 
 			if err != nil {
 				log.Println(err)
