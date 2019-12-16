@@ -96,8 +96,15 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 			// msg := &JSONRooms{
 			// 	Rooms: rooms,
 			// }
+			playersInRoom["123"] = "123123"
+			for i, j := range playersInRoom {
+				log.Println(i)
+				log.Println(j)
+			}
 
-			msg := &JSONPlayersInRoom{
+			log.Println(playersInRoom)
+
+			msg := JSONPlayersInRoom{
 				players: playersInRoom,
 			}
 
