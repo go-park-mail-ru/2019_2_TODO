@@ -35,8 +35,17 @@ type RoomsInside struct {
 	players      []*PlayerInRoom `json:"players"`
 }
 
+// type JSONRooms struct {
+// 	Rooms map[string]*RoomsInside `json:"rooms"`
+// }
+
+type JSONRoom struct {
+	room       string       `json:"room"`
+	roomInside *RoomsInside `json:"roomInside"`
+}
+
 type JSONRooms struct {
-	Rooms map[string]*RoomsInside `json:"rooms"`
+	Rooms []*JSONRoom `json:"rooms"`
 }
 
 type JSONLeaders struct {
@@ -87,10 +96,12 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 			// 	}
 			// }
 
-			var rooms = map[string]*RoomsInside{}
+			var rooms = []*JSONRoom{}
 			for r, _ := range core.FreeRooms {
-				rooms[r] = &RoomsInside{}
-				break
+				rooms = append(rooms, &JSONRoom{
+					room:       r,
+					roomInside: &RoomsInside{},
+				})
 			}
 
 			var jsonRooms = &JSONRooms{
