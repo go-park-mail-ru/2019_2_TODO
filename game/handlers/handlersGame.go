@@ -42,7 +42,8 @@ type JSONPlayersInRoom struct {
 }
 
 type JSONRooms struct {
-	Rooms map[string]*RoomsInside `json:"rooms"`
+	// Rooms map[string]*RoomsInside `json:"rooms"`
+	Rooms map[string]int `json:"rooms"`
 }
 
 type JSONLeaders struct {
@@ -69,49 +70,47 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 					core.NewRoom("")
 				}
 			}
-			var rooms = make(map[string]*RoomsInside)
-			var playersInRoom = make(map[string]string)
+			var rooms = make(map[string]int)
+			// var playersInRoom = make(map[string]string)
 			for r, room := range core.FreeRooms {
-				if len(room.PlayerConns) > 0 {
-					for pl := range room.PlayerConns {
-						userData, err := h.Usecase.SelectUserByID(int64(pl.ID))
-						if err != nil {
-							log.Println(err)
-							break
-						}
-						player := &PlayerInRoom{
-							username: userData.Username,
-							avatar:   userData.Avatar,
-						}
-						// playersInRoom = append(playersInRoom, player)
-						playersInRoom[player.username] = player.avatar
-					}
-				}
-				roomInside := &RoomsInside{
-					places:       2,
-					actualPlaces: len(room.PlayerConns),
-					// players:      playersInRoom,
-				}
-				rooms[r] = roomInside
+				// if len(room.PlayerConns) > 0 {
+				// 	for pl := range room.PlayerConns {
+				// 		userData, err := h.Usecase.SelectUserByID(int64(pl.ID))
+				// 		if err != nil {
+				// 			log.Println(err)
+				// 			break
+				// 		}
+				// 		player := &PlayerInRoom{
+				// 			username: userData.Username,
+				// 			avatar:   userData.Avatar,
+				// 		}
+				// 		// playersInRoom = append(playersInRoom, player)
+				// 		playersInRoom[player.username] = player.avatar
+				// 	}
+				// }
+				// roomInside := &RoomsInside{
+				// 	places:       2,
+				// 	actualPlaces: len(room.PlayerConns),
+				// 	// players:      playersInRoom,
+				// }
+				rooms[r] = len(room.PlayerConns)
 			}
 
 			// msg := &JSONRooms{
 			// 	Rooms: rooms,
 			// }
-			for i, j := range playersInRoom {
-				log.Println(i)
-				log.Println(j)
-			}
+			// for i, j := range playersInRoom {
+			// 	log.Println(i)
+			// 	log.Println(j)
+			// }
 
-			log.Println(playersInRoom)
+			// log.Println(playersInRoom)
 
-			msg := &JSONPlayersInRoom{
-				username: "123",
-				avatar:   "123",
+			msg := &JSONRooms{
+				Rooms: rooms,
 			}
 
 			err := ws.WriteJSON(msg)
-
 			if err != nil {
 				log.Println(err)
 				ws.Close()
