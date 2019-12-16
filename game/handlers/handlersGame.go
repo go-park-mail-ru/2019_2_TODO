@@ -36,7 +36,7 @@ type RoomsInside struct {
 }
 
 type JSONPlayersInRoom struct {
-	players []*PlayerInRoom `json:"players"`
+	players map[string]string `json:"players"`
 }
 
 type JSONRooms struct {
@@ -68,7 +68,7 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 				}
 			}
 			var rooms = make(map[string]*RoomsInside)
-			var playersInRoom = []*PlayerInRoom{}
+			var playersInRoom = make(map[string]string)
 			for r, room := range core.FreeRooms {
 				if len(room.PlayerConns) > 0 {
 					for pl := range room.PlayerConns {
@@ -81,7 +81,8 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 							username: userData.Username,
 							avatar:   userData.Avatar,
 						}
-						playersInRoom = append(playersInRoom, player)
+						// playersInRoom = append(playersInRoom, player)
+						playersInRoom[player.username] = player.avatar
 					}
 				}
 				roomInside := &RoomsInside{
