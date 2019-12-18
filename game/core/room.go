@@ -2,6 +2,10 @@ package core
 
 import (
 	"log"
+	"strconv"
+
+	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/game/leaderBoardModel"
+	repository "github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/game/repositoryLeaders"
 
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/game/hand"
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/game/utils"
@@ -51,11 +55,20 @@ func (r *Room) run() {
 			// if room is full - delete from freeRooms
 			if len(r.PlayerConns) == 2 {
 				delete(FreeRooms, r.Name)
-
 			}
 
 		case c := <-r.Leave:
 			c.GiveUp()
+			userData := &leaderBoardModel.UserLeaderBoard{
+				ID:       int64(c.Player.ID),
+				Username: c.Player.Name,
+				Points:   strconv.Itoa(c.Player.Chips + c.Player.Bet),
+			}
+			newConn := repository.NewUserMemoryRepository()
+			_, err := newConn.UpdateLeader(userData)
+			if err != nil {
+				log.Println(err)
+			}
 			r.updateAllPlayersExceptYou(c, "removePlayer")
 			delete(r.PlayerConns, c)
 			if len(r.PlayerConns) == 0 {

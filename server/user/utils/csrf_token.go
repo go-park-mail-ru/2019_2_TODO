@@ -2,10 +2,11 @@ package utils
 
 import (
 	"fmt"
+	"log"
 	"net/http"
+	"strconv"
 	"time"
 
-	"github.com/gorilla/sessions"
 	"github.com/labstack/echo"
 
 	jwt "github.com/dgrijalva/jwt-go"
@@ -35,10 +36,14 @@ type JwtCsrfClaims struct {
 }
 
 // Create - create and sign JwtToken
-func (tk *JwtToken) Create(s *sessions.Session, tokenExpTime int64) (string, error) {
+func (tk *JwtToken) Create(s []string, tokenExpTime int64) (string, error) {
+	userID, err := strconv.ParseInt(s[1], 10, 64)
+	if err != nil {
+		return "", nil
+	}
 	data := JwtCsrfClaims{
-		SessionID: s.ID,
-		UserID:    s.Values["id"].(int64),
+		SessionID: s[0],
+		UserID:    userID,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: tokenExpTime,
 			IssuedAt:  time.Now().Unix(),
@@ -49,7 +54,7 @@ func (tk *JwtToken) Create(s *sessions.Session, tokenExpTime int64) (string, err
 }
 
 // Check - checks signing token
-func (tk *JwtToken) Check(s *sessions.Session, inputToken string) (bool, error) {
+func (tk *JwtToken) Check(s []string, inputToken string) (bool, error) {
 	payload := &JwtCsrfClaims{}
 	_, err := jwt.ParseWithClaims(inputToken, payload, tk.parseSecretGetter)
 	if err != nil {
@@ -58,7 +63,11 @@ func (tk *JwtToken) Check(s *sessions.Session, inputToken string) (bool, error) 
 	if payload.Valid() != nil {
 		return false, fmt.Errorf("invalid jwt token: %v", err)
 	}
-	return payload.SessionID == s.ID && payload.UserID == s.Values["ID"], nil
+	userID, err := strconv.ParseInt(s[1], 10, 64)
+	if err != nil {
+		return false, nil
+	}
+	return payload.SessionID == s[0] && payload.UserID == userID, nil
 }
 
 // parseSecretGetter - parse single secret token
@@ -71,13 +80,12 @@ func (tk *JwtToken) parseSecretGetter(token *jwt.Token) (interface{}, error) {
 }
 
 // SetToken - set and sign token and return token and error
-func SetToken(ctx echo.Context) error {
-	session, err := SessionsStore.Get(ctx.Request(), "session_token")
-	if err != nil {
-		return err
-	}
+func SetToken(ctx echo.Context, cookieSes *http.Cookie) error {
+	session := ReadSessionIDAndUserIDJWT(cookieSes)
+	log.Println(session)
 
 	token, err := NewJwtToken(Secret)
+	log.Println(token)
 	if err != nil {
 		return err
 	}

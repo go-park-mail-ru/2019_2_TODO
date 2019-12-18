@@ -1,16 +1,21 @@
 package http
 
 import (
+	"context"
 	"encoding/base64"
 	"io"
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
+	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/game/leaderBoardModel"
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/middlewares"
+
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/model"
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/user"
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/user/utils"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/labstack/echo"
 	"github.com/microcosm-cc/bluemonday"
@@ -25,6 +30,8 @@ type Handlers struct {
 func NewUserHandler(e *echo.Echo, us user.Usecase) {
 	handlers := Handlers{Users: us}
 
+	e.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
+
 	e.GET("/", handlers.handleOk)
 	e.GET("/signin/", handlers.handleSignInGet)
 	e.GET("/signin/profile/", handlers.handleGetProfile)
@@ -34,10 +41,10 @@ func NewUserHandler(e *echo.Echo, us user.Usecase) {
 	e.POST("/signin/", handlers.handleSignIn)
 	e.POST("/signin/profile/", handlers.handleChangeProfile, middlewares.JWTMiddlewareCustom)
 	e.POST("/signin/profileImage/", handlers.handleChangeImage, middlewares.JWTMiddlewareCustom)
-
 }
 
 func (h *Handlers) handleSignUp(ctx echo.Context) error {
+	log.Println(utils.SessManager)
 	newUserInput := new(model.User)
 
 	if err := ctx.Bind(newUserInput); err != nil {
@@ -55,13 +62,26 @@ func (h *Handlers) handleSignUp(ctx echo.Context) error {
 		return ctx.JSON(http.StatusInternalServerError, "")
 	}
 
-	log.Println("Last id: ", lastID)
+	userLeader := &leaderBoardModel.UserLeaderBoard{
+		ID:       lastID,
+		Username: newUserInput.Username,
+		Points:   "1000",
+	}
 
-	if err = utils.SetCookie(ctx, *newUserInput); err != nil {
+	_, err = h.Users.CreateLeader(userLeader)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, "LeaderBoard Error")
+	}
+
+	log.Println("Last id: ", lastID)
+	newUserInput.ID = lastID
+
+	var cookie *http.Cookie
+	if cookie, err = utils.SetSession(ctx, newUserInput); err != nil {
 		ctx.JSON(http.StatusInternalServerError, "Cookie set error")
 	}
 
-	err = utils.SetToken(ctx)
+	err = utils.SetToken(ctx, cookie)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, "Token set error")
 	}
@@ -72,7 +92,6 @@ func (h *Handlers) handleSignUp(ctx echo.Context) error {
 }
 
 func (h *Handlers) handleSignIn(ctx echo.Context) error {
-
 	authCredentials := new(model.User)
 
 	if err := ctx.Bind(authCredentials); err != nil {
@@ -96,11 +115,12 @@ func (h *Handlers) handleSignIn(ctx echo.Context) error {
 	log.Println("UserData: ID - ", userRecord.ID, " Login - ", userRecord.Username,
 		" Avatar - ", userRecord.Avatar)
 
-	if err = utils.SetCookie(ctx, *userRecord); err != nil {
+	var cookie *http.Cookie
+	if cookie, err = utils.SetSession(ctx, userRecord); err != nil {
 		ctx.JSON(http.StatusInternalServerError, "Cookie set error")
 	}
 
-	err = utils.SetToken(ctx)
+	err = utils.SetToken(ctx, cookie)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, "Token set error")
 	}
@@ -109,8 +129,26 @@ func (h *Handlers) handleSignIn(ctx echo.Context) error {
 }
 
 func (h *Handlers) handleSignInGet(ctx echo.Context) error {
-	cookieUsername := utils.ReadCookieUsername(ctx)
-	cookieAvatar := utils.ReadCookieAvatar(ctx)
+	session, err := utils.SessManager.Check(
+		context.Background(),
+		utils.ReadSessionID(ctx),
+	)
+
+	if err != nil {
+		return nil
+	}
+
+	sessIDAndUserID := utils.ReadSessionIDAndUserID(ctx)
+	if sessIDAndUserID == nil {
+		return ctx.JSON(http.StatusInternalServerError, "Not ok")
+	}
+
+	userID, err := strconv.Atoi(sessIDAndUserID[1])
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, "Not ok")
+	}
+	cookieUsername := session.Username
+	cookieAvatar := session.Avatar
 
 	log.Println(cookieUsername + " " + cookieAvatar)
 
@@ -118,14 +156,16 @@ func (h *Handlers) handleSignInGet(ctx echo.Context) error {
 		cookieUsernameInput := model.User{}
 		if cookieUsername == "Resg" {
 			cookieUsernameInput = model.User{
+				ID:       int64(userID),
 				Username: cookieUsername,
-				Avatar:   utils.BackIP + cookieAvatar,
+				Avatar:   cookieAvatar,
 				Admin:    true,
 			}
 		} else {
 			cookieUsernameInput = model.User{
+				ID:       int64(userID),
 				Username: cookieUsername,
-				Avatar:   utils.BackIP + cookieAvatar,
+				Avatar:   cookieAvatar,
 			}
 		}
 		log.Println(cookieUsernameInput)
@@ -136,11 +176,11 @@ func (h *Handlers) handleSignInGet(ctx echo.Context) error {
 }
 
 func (h *Handlers) handleOk(ctx echo.Context) error {
-	utils.ClearCookie(ctx)
 	return nil
 }
 
 func (h *Handlers) handleChangeProfile(ctx echo.Context) error {
+	log.Println("Im here")
 
 	changeProfileCredentials := new(model.User)
 
@@ -148,7 +188,15 @@ func (h *Handlers) handleChangeProfile(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, "")
 	}
 
-	oldUsername := utils.ReadCookieUsername(ctx)
+	log.Println(changeProfileCredentials)
+
+	session, err := utils.СheckSession(ctx)
+
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, "Error Checking session")
+	}
+
+	oldUsername := session.Username
 
 	oldData, err := h.Users.SelectDataByLogin(oldUsername)
 
@@ -160,6 +208,16 @@ func (h *Handlers) handleChangeProfile(ctx echo.Context) error {
 	changeProfileCredentials.Avatar = oldData.Avatar
 	if changeProfileCredentials.Username == "" {
 		changeProfileCredentials.Username = oldData.Username
+	} else {
+		elem, err := h.Users.SelectLeaderByID(changeProfileCredentials.ID)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, "LeaderBoard Error")
+		}
+		elem.Username = changeProfileCredentials.Username
+		_, err = h.Users.UpdateLeader(elem)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, "LeaderBoard Error")
+		}
 	}
 
 	if changeProfileCredentials.Password == "" {
@@ -172,7 +230,7 @@ func (h *Handlers) handleChangeProfile(ctx echo.Context) error {
 	}
 	log.Println("Update affectedRows: ", affected)
 
-	if err = utils.SetCookie(ctx, *changeProfileCredentials); err != nil {
+	if _, err = utils.SetSession(ctx, changeProfileCredentials); err != nil {
 		ctx.JSON(http.StatusInternalServerError, "Cookie set error")
 	}
 
@@ -180,8 +238,16 @@ func (h *Handlers) handleChangeProfile(ctx echo.Context) error {
 }
 
 func (h *Handlers) handleChangeImage(ctx echo.Context) error {
+	session, err := utils.SessManager.Check(
+		context.Background(),
+		utils.ReadSessionID(ctx),
+	)
 
-	username := utils.ReadCookieUsername(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, "Error Checking session")
+	}
+
+	username := session.Username
 
 	fileName, err := loadAvatar(ctx, username)
 	if err != nil {
@@ -207,7 +273,7 @@ func (h *Handlers) handleChangeImage(ctx echo.Context) error {
 	}
 	log.Println("Update affectedRows: ", affected)
 
-	if err = utils.SetCookie(ctx, *changeData); err != nil {
+	if _, err = utils.SetSession(ctx, changeData); err != nil {
 		ctx.JSON(http.StatusInternalServerError, "Cookie set error")
 	}
 
@@ -245,9 +311,18 @@ func loadAvatar(ctx echo.Context, username string) (string, error) {
 
 func (h *Handlers) handleGetProfile(ctx echo.Context) error {
 
+	session, err := utils.SessManager.Check(
+		context.Background(),
+		utils.ReadSessionID(ctx),
+	)
+
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, "Error Checking session")
+	}
+
 	cookiesData := model.User{
-		Username: utils.ReadCookieUsername(ctx),
-		Avatar:   utils.ReadCookieAvatar(ctx),
+		Username: session.Username,
+		Avatar:   session.Avatar,
 	}
 
 	if cookiesData.Username == "" {
@@ -258,6 +333,6 @@ func (h *Handlers) handleGetProfile(ctx echo.Context) error {
 }
 
 func (h *Handlers) handleLogout(ctx echo.Context) error {
-	utils.ClearCookie(ctx)
+	utils.ClearSession(ctx)
 	return ctx.JSON(http.StatusOK, "")
 }

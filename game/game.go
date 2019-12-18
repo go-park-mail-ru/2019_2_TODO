@@ -1,114 +1,95 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"log"
 	"net/http"
-	"net/url"
+	"strconv"
+	"time"
 
-	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/game/core"
+	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/game/handlers"
 
-	"github.com/gorilla/websocket"
+	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/auth/session"
+	repository "github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/game/repositoryLeaders"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/naming"
+
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
+
+	consulapi "github.com/hashicorp/consul/api"
+
+	_ "github.com/go-sql-driver/mysql"
+)
+
+var (
+	consulAddr = flag.String("addr", "127.0.0.1:8500", "consul addr (8500 in original consul)")
+)
+
+var (
+	consul       *consulapi.Client
+	nameResolver *testNameResolver
+	servers      []string
 )
 
 const (
-	ListenAddr = "172.26.112.3:82"
+	ListenAddr = "172.26.112.3:443"
 	FrontIP    = "http://93.171.139.195:780"
+	FrontIPNew = "https://www.pokertodo.ru:743"
 )
 
-// var (
-// 	sessManager session.AuthCheckerClient
-// )
-
-// type tokenAuth struct {
-// 	Token string
-// }
-
-// func (t *tokenAuth) GetRequestMetadata(context.Context, ...string) (map[string]string, error) {
-// 	return map[string]string{
-// 		"session_token": t.Token,
-// 	}, nil
-// }
-
-// func (c *tokenAuth) RequireTransportSecurity() bool {
-// 	return false
-// }
-
-type JSONRooms struct {
-	Rooms map[string]int `json:"rooms"`
-}
-
-func getRooms(ctx echo.Context) error {
-	if len(core.FreeRooms) == 2 {
-		for i := 0; i < 4; i++ {
-			core.NewRoom("")
-		}
-	}
-	var rooms = map[string]int{}
-	for r, room := range core.FreeRooms {
-		rooms[r] = len(room.PlayerConns)
-	}
-	var jsonRooms = &JSONRooms{
-		Rooms: rooms,
-	}
-	return ctx.JSON(http.StatusOK, jsonRooms)
-}
-
-func wsHandler(ctx echo.Context) error {
-	ws, err := websocket.Upgrade(ctx.Response(), ctx.Request(), nil, 1024, 1024)
-	if _, ok := err.(websocket.HandshakeError); ok {
-		http.Error(ctx.Response(), "Not a websocket handshake", 400)
-		return err
-	} else if err != nil {
-		return err
-	}
-
-	playerName := "Player"
-	var playerStartChips int = 1000
-	params, _ := url.ParseQuery(ctx.Request().URL.RawQuery)
-	if len(params["name"]) > 0 {
-		playerName = params["name"][0]
-	}
-
-	// ctxSes := context.Background()
-	// nothing := &session.Nothing{}
-	// sessionData, err := sessManager.HandleSignInGet(ctxSes, nothing)
-
-	// if err != nil {
-	// 	log.Println("Error while grcp session check")
-	// }
-
-	// emptySession := &session.Session{}
-	// if sessionData != emptySession {
-	// 	playerName = sessionData.GetUsername()
-	// }
-
-	var roomName string = "newRoom"
-	if len(params["roomName"]) > 0 {
-		roomName = params["roomName"][0]
-	}
-
-	// Get or create a room
-	var room *core.Room
-	if roomName != "newRoom" {
-		room = core.AllRooms[roomName]
-	} else {
-		room = core.NewRoom("")
-	}
-
-	// Create Player and Conn
-	player := core.NewPlayer(playerName, playerStartChips)
-	pConn := core.NewPlayerConn(ws, player, room)
-	// Join Player to room
-	room.Join <- pConn
-
-	log.Printf("Player: %s has joined to room: %s", pConn.Name, room.Name)
-
-	return nil
-}
-
 func main() {
+	flag.Parse()
+
+	var err error
+	config := consulapi.DefaultConfig()
+	config.Address = *consulAddr
+	consul, err = consulapi.NewClient(config)
+
+	health, _, err := consul.Health().Service("session-api", "", false, nil)
+	if err != nil {
+		log.Fatalf("cant get alive services")
+	}
+
+	servers = []string{}
+	for _, item := range health {
+		addr := item.Service.Address +
+			":" + strconv.Itoa(item.Service.Port)
+		servers = append(servers, addr)
+	}
+
+	nameResolver = &testNameResolver{
+		addr: servers[0],
+	}
+	log.Println(nameResolver)
+
+	grcpConn, err := grpc.Dial(
+		servers[0],
+		grpc.WithInsecure(),
+		grpc.WithBlock(),
+		grpc.WithBalancer(grpc.RoundRobin(nameResolver)),
+	)
+	if err != nil {
+		log.Fatalf("cant connect to grpc")
+	}
+	defer grcpConn.Close()
+
+	if len(servers) > 1 {
+		var updates []*naming.Update
+		for i := 1; i < len(servers); i++ {
+			updates = append(updates, &naming.Update{
+				Op:   naming.Add,
+				Addr: servers[i],
+			})
+		}
+		nameResolver.w.inject(updates)
+	}
+
+	handlers.SessManager = session.NewAuthCheckerClient(grcpConn)
+
+	go runOnlineServiceDiscovery(servers)
+
 	e := echo.New()
 
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
@@ -116,34 +97,68 @@ func main() {
 	}))
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins:     []string{FrontIP},
+		AllowOrigins:     []string{FrontIP, FrontIPNew},
 		AllowMethods:     []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
 		AllowCredentials: true,
 	}))
 
-	// grcpConn, err := grpc.Dial(
-	// 	utils.BackIP,
-	// 	grpc.WithPerRPCCredentials(&tokenAuth{"session_token"}),
-	// 	grpc.WithInsecure(),
-	// )
+	leaderBoardDB := repository.NewUserMemoryRepository()
 
-	// if err != nil {
-	// 	log.Fatalf("cant connect to grpc")
-	// }
+	handlers := &handlers.HandlersGame{
+		Usecase: leaderBoardDB,
+	}
 
-	// defer grcpConn.Close()
+	e.GET("/rooms/", handlers.GetRooms)
+	e.GET("/multiplayer/", handlers.WsHandler)
+	e.GET("/leaderboard/", handlers.LeaderBoardTopHandler)
 
-	// sessManager = session.NewAuthCheckerClient(grcpConn)
+	e.Logger.Fatal(e.StartTLS(ListenAddr, "cert.crt", "key.crt"))
+}
 
-	e.GET("/rooms/", func(ctx echo.Context) error {
-		getRooms(ctx)
-		return nil
-	})
+func runOnlineServiceDiscovery(servers []string) {
+	currAddrs := make(map[string]struct{}, len(servers))
+	for _, addr := range servers {
+		currAddrs[addr] = struct{}{}
+	}
+	ticker := time.Tick(5 * time.Second)
+	for _ = range ticker {
+		health, _, err := consul.Health().Service("session-api", "", false, nil)
+		if err != nil {
+			log.Fatalf("cant get alive services")
+		}
 
-	e.GET("/multiplayer/", func(ctx echo.Context) error {
-		wsHandler(ctx)
-		return nil
-	})
+		newAddrs := make(map[string]struct{}, len(health))
+		for _, item := range health {
+			addr := item.Service.Address +
+				":" + strconv.Itoa(item.Service.Port)
+			newAddrs[addr] = struct{}{}
+		}
 
-	e.Logger.Fatal(e.Start(ListenAddr))
+		var updates []*naming.Update
+		// проверяем что удалилось
+		for addr := range currAddrs {
+			if _, exist := newAddrs[addr]; !exist {
+				updates = append(updates, &naming.Update{
+					Op:   naming.Delete,
+					Addr: addr,
+				})
+				delete(currAddrs, addr)
+				fmt.Println("remove", addr)
+			}
+		}
+		// проверяем что добавилось
+		for addr := range newAddrs {
+			if _, exist := currAddrs[addr]; !exist {
+				updates = append(updates, &naming.Update{
+					Op:   naming.Add,
+					Addr: addr,
+				})
+				currAddrs[addr] = struct{}{}
+				fmt.Println("add", addr)
+			}
+		}
+		if len(updates) > 0 {
+			nameResolver.w.inject(updates)
+		}
+	}
 }

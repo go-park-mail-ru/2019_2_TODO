@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"log"
 
+	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/game/leaderBoardModel"
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/model"
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/user"
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/server/user/utils"
@@ -51,6 +52,48 @@ func (repo *UsersRepository) ListAll() ([]*model.User, error) {
 		users = append(users, record)
 	}
 	return users, nil
+}
+
+// CreateLeader - create new user in leaderboard
+func (repo *UsersRepository) CreateLeader(elem *leaderBoardModel.UserLeaderBoard) (int64, error) {
+	result, err := repo.DB.Exec(
+		"INSERT INTO leaderboard (`username`, `points`) VALUES (?, ?)",
+		elem.Username,
+		elem.Points,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.LastInsertId()
+}
+
+// SelectLeaderByID - select all user`s data by ID
+func (repo *UsersRepository) SelectLeaderByID(id int64) (*leaderBoardModel.UserLeaderBoard, error) {
+	record := &leaderBoardModel.UserLeaderBoard{}
+	err := repo.DB.
+		QueryRow("SELECT id, username, points FROM leaderboard WHERE id = ?", id).
+		Scan(&record.ID, &record.Username, &record.Points)
+	if err != nil {
+		return nil, err
+	}
+	return record, nil
+}
+
+// UpdateLeader - update user`s data in DataBase
+func (repo *UsersRepository) UpdateLeader(elem *leaderBoardModel.UserLeaderBoard) (int64, error) {
+	result, err := repo.DB.Exec(
+		"UPDATE leaderboard SET"+
+			"`username` = ?"+
+			",`points` = ?"+
+			"WHERE id = ?",
+		elem.Username,
+		elem.Points,
+		elem.ID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }
 
 // SelectByID - select all user`s data by ID

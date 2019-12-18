@@ -6,10 +6,8 @@ import (
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/game/hand"
 )
 
-var IDplayer int32 = 0
-
 type jsonMsg struct {
-	ID        int32       `json:"id"`
+	ID        int         `json:"id"`
 	Username  string      `json:"username"`
 	Bet       int         `json:"bet"`
 	Score     int         `json:"score"`
@@ -22,7 +20,7 @@ type Msg struct {
 }
 
 type Player struct {
-	ID        int32
+	ID        int
 	Name      string
 	Chips     int
 	Hand      []hand.Card
@@ -31,9 +29,8 @@ type Player struct {
 	Active    bool
 }
 
-func NewPlayer(name string, chips int) *Player {
-	player := &Player{ID: IDplayer, Name: name, Chips: chips, Hand: []hand.Card{}}
-	IDplayer++
+func NewPlayer(IDPlayer int, name string, chips int) *Player {
+	player := &Player{ID: IDPlayer, Name: name, Chips: chips, Hand: []hand.Card{}}
 	return player
 }
 

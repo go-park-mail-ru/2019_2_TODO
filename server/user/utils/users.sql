@@ -12,5 +12,16 @@ CREATE TABLE `users` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+DROP TABLE IF EXISTS `leaderboard`;
+CREATE TABLE `leaderboard` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `username` varchar(255) NOT NULL,
+  `points` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 INSERT INTO `users` (`id`, `login`, `password`, `avatar`) VALUES
-(1,	'admin', 'root', 'images/avatar');
+(11,	'theBest', '123', 'images/avatar');
+
+INSERT INTO `leaderboard` (`id`, `username`, `points`) VALUES
+(11,	'theBest', '1001');
