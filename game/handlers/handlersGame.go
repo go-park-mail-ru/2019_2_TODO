@@ -65,6 +65,7 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 			}
 			var rooms = map[string]*RoomsInside{}
 			var playersInRoom = []*PlayerInRoom{}
+			var roomInside = &RoomsInside{}
 			for r, room := range core.FreeRooms {
 				if len(room.PlayerConns) > 0 {
 					for pl := range room.PlayerConns {
@@ -79,11 +80,13 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 						}
 						playersInRoom = append(playersInRoom, player)
 					}
-				}
-				roomInside := &RoomsInside{
-					Places:       2,
-					ActualPlaces: len(room.PlayerConns),
-					Players:      playersInRoom,
+					roomInside = &RoomsInside{
+						Places:       2,
+						ActualPlaces: len(room.PlayerConns),
+						Players:      playersInRoom,
+					}
+				} else {
+					roomInside = &RoomsInside{}
 				}
 				rooms[r] = roomInside
 			}
