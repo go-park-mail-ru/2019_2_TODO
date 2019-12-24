@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/auth/session"
@@ -180,9 +181,12 @@ func keepAlive(c *websocket.Conn, timeout time.Duration) {
 		return nil
 	})
 
+	var mu sync.Mutex
 	go func() {
 		for {
+			mu.Lock()
 			err := c.WriteMessage(websocket.PingMessage, []byte("keepalive"))
+			mu.Unlock()
 			if err != nil {
 				return
 			}
