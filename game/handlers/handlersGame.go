@@ -25,26 +25,18 @@ type HandlersGame struct {
 }
 
 type PlayerInRoom struct {
-	username string `json:"username"`
-	avatar   string `json:"avatar"`
+	Username string `json:"username"`
+	Avatar   string `json:"avatar"`
 }
 
 type RoomsInside struct {
-	places       int `json:"places"`
-	actualPlaces int `json:"actualPlaces"`
-	// players      []*PlayerInRoom `json:"players"`
-}
-
-type JSONPlayersInRoom struct {
-	// players map[string]string `json:"players"`
-	username string `json:"username"`
-	avatar   string `json:"avatar"`
+	Places       int             `json:"places"`
+	ActualPlaces int             `json:"actualPlaces"`
+	Players      []*PlayerInRoom `json:"players"`
 }
 
 type JSONRooms struct {
-	// Rooms map[string]*RoomsInside `json:"rooms"`
-	Rooms    map[string]int `json:"rooms"`
-	Username string         `json:"username"`
+	Rooms map[string]*RoomsInside `json:"rooms"`
 }
 
 type JSONLeaders struct {
@@ -56,7 +48,7 @@ var (
 )
 
 func (h *HandlersGame) GetRooms(ctx echo.Context) error {
-	ws, err := websocket.Upgrade(ctx.Response(), ctx.Request(), nil, 4096, 4096)
+	ws, err := websocket.Upgrade(ctx.Response(), ctx.Request(), nil, 1024, 1024)
 	if _, ok := err.(websocket.HandshakeError); ok {
 		http.Error(ctx.Response(), "Not a websocket handshake", 400)
 		return err
@@ -71,41 +63,30 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 					core.NewRoom("")
 				}
 			}
-			var rooms = make(map[string]int)
-			// var playersInRoom = make(map[string]string)
+			var rooms = map[string]*RoomsInside{}
+			var playersInRoom = []*PlayerInRoom{}
 			for r, room := range core.FreeRooms {
-				// if len(room.PlayerConns) > 0 {
-				// 	for pl := range room.PlayerConns {
-				// 		userData, err := h.Usecase.SelectUserByID(int64(pl.ID))
-				// 		if err != nil {
-				// 			log.Println(err)
-				// 			break
-				// 		}
-				// 		player := &PlayerInRoom{
-				// 			username: userData.Username,
-				// 			avatar:   userData.Avatar,
-				// 		}
-				// 		// playersInRoom = append(playersInRoom, player)
-				// 		playersInRoom[player.username] = player.avatar
-				// 	}
-				// }
-				// roomInside := &RoomsInside{
-				// 	places:       2,
-				// 	actualPlaces: len(room.PlayerConns),
-				// 	// players:      playersInRoom,
-				// }
-				rooms[r] = len(room.PlayerConns)
+				if len(room.PlayerConns) > 0 {
+					for pl := range room.PlayerConns {
+						userData, err := h.Usecase.SelectUserByID(int64(pl.ID))
+						if err != nil {
+							log.Println(err)
+							break
+						}
+						player := &PlayerInRoom{
+							Username: userData.Username,
+							Avatar:   userData.Avatar,
+						}
+						playersInRoom = append(playersInRoom, player)
+					}
+				}
+				roomInside := &RoomsInside{
+					Places:       2,
+					ActualPlaces: len(room.PlayerConns),
+					Players:      playersInRoom,
+				}
+				rooms[r] = roomInside
 			}
-
-			// msg := &JSONRooms{
-			// 	Rooms: rooms,
-			// }
-			// for i, j := range playersInRoom {
-			// 	log.Println(i)
-			// 	log.Println(j)
-			// }
-
-			// log.Println(playersInRoom)
 
 			msg := &JSONRooms{
 				Rooms: rooms,

@@ -100,6 +100,8 @@ func (h *Handlers) handleSignIn(ctx echo.Context) error {
 
 	authCredentials.Username = utils.Sanitizer.Sanitize(authCredentials.Username)
 
+	// Проверить почему можно зайти под любым паролем
+
 	userRecord, err := h.Users.SelectDataByLogin(authCredentials.Username)
 
 	if err != nil {
@@ -117,12 +119,12 @@ func (h *Handlers) handleSignIn(ctx echo.Context) error {
 
 	var cookie *http.Cookie
 	if cookie, err = utils.SetSession(ctx, userRecord); err != nil {
-		ctx.JSON(http.StatusInternalServerError, "Cookie set error")
+		return ctx.JSON(http.StatusInternalServerError, "Cookie set error")
 	}
 
 	err = utils.SetToken(ctx, cookie)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, "Token set error")
+		return ctx.JSON(http.StatusInternalServerError, "Token set error")
 	}
 
 	return nil
