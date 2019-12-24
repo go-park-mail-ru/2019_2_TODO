@@ -24,7 +24,7 @@ const (
 	pongWait = 60 * time.Second
 
 	// Send pings to peer with this period. Must be less than pongWait.
-	pingPeriod = (pongWait * 9) / 10
+	pingPeriod = (pongWait*9)/10 + 1
 )
 
 type RoomSettings struct {
