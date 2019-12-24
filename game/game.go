@@ -111,6 +111,7 @@ func main() {
 	e.GET("/rooms/", handlers.GetRooms)
 	e.GET("/multiplayer/", handlers.WsHandler)
 	e.GET("/leaderboard/", handlers.LeaderBoardTopHandler)
+	e.POST("/createroom/", handlers.CreateRoom)
 
 	e.Logger.Fatal(e.StartTLS(ListenAddr, "cert.crt", "key.crt"))
 }

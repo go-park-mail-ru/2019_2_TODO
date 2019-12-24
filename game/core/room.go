@@ -3,6 +3,7 @@ package core
 import (
 	"log"
 	"strconv"
+	"sync"
 
 	"github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/game/leaderBoardModel"
 	repository "github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/game/repositoryLeaders"
@@ -17,7 +18,7 @@ var RoomsCount int
 
 func init() {
 	for i := 0; i < 4; i++ {
-		NewRoom("")
+		NewRoom("", 2, false, "", 20)
 	}
 }
 
@@ -25,9 +26,15 @@ type Room struct {
 	Name             string
 	RoomReadyCounter int32
 	RoomStartRound   bool
-	RoomMaxBet       int
+	RoomMinBet       int
 	Command          string
 	Game             *Game
+
+	PlayersInRoom int
+	Private       bool
+	Password      string
+
+	mu sync.Mutex
 
 	// Registered connections.
 	PlayerConns map[*playerConn]bool
@@ -84,8 +91,10 @@ func (r *Room) run() {
 					r.updateAllPlayers(conn, "updatePlayerScore")
 				}
 				if r.Command == "endFoldGame" {
+					r.mu.Lock()
 					r.RoomReadyCounter = 0
 					r.RoomStartRound = false
+					r.mu.Unlock()
 					goto EndFoldGame
 				}
 				r.Game.PlayerCounterChange()
@@ -108,8 +117,10 @@ func (r *Room) run() {
 						for conn := range r.PlayerConns {
 							conn.sendWinnerHand(winnerHand, "showWinnerCards")
 						}
+						r.mu.Lock()
 						r.RoomReadyCounter = 0
 						r.RoomStartRound = false
+						r.mu.Unlock()
 					}
 					for conn := range r.PlayerConns {
 						r.updateAllPlayers(conn, "updatePlayerScore")
@@ -123,7 +134,11 @@ func (r *Room) run() {
 				r.updateAllPlayers(r.Game.Players[r.Game.PlayerCounter], "enablePlayer")
 			}
 		EndFoldGame:
-			if r.RoomReadyCounter == 2 && !r.RoomStartRound {
+			r.mu.Lock()
+			allReady := (r.RoomReadyCounter == 2)
+			started := r.RoomStartRound
+			r.mu.Unlock()
+			if allReady && !started {
 				players := []*playerConn{}
 				for player := range r.PlayerConns {
 					player.Active = true
@@ -135,7 +150,7 @@ func (r *Room) run() {
 					TableCards:    []hand.Card{},
 					Bank:          0,
 					Dealer:        0,
-					MinBet:        20,
+					MinBet:        r.RoomMinBet,
 					PlayerCounter: 0,
 					StageCounter:  0,
 				}
@@ -158,7 +173,9 @@ Exit:
 	// delete room
 	delete(AllRooms, r.Name)
 	delete(FreeRooms, r.Name)
+	r.mu.Lock()
 	RoomsCount -= 1
+	r.mu.Unlock()
 	log.Print("Room closed:", r.Name)
 }
 
@@ -230,15 +247,21 @@ func (r *Room) updateLastPlayer(conn *playerConn, command string) {
 	}
 }
 
-func NewRoom(name string) *Room {
+func NewRoom(name string, playersInRoom int, private bool, password string, minBet int) *Room {
 	if name == "" {
 		name = utils.RandString(16)
 	}
+
+	var mu sync.Mutex
 
 	room := &Room{
 		Name:             name,
 		RoomReadyCounter: 0,
 		Game:             &Game{},
+		RoomMinBet:       minBet,
+		PlayersInRoom:    playersInRoom,
+		Private:          private,
+		Password:         password,
 		PlayerConns:      make(map[*playerConn]bool),
 		UpdateAll:        make(chan *playerConn),
 		Join:             make(chan *playerConn),
@@ -251,7 +274,9 @@ func NewRoom(name string) *Room {
 	// run room
 	go room.run()
 
+	mu.Lock()
 	RoomsCount += 1
+	mu.Unlock()
 
 	return room
 }

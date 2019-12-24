@@ -27,6 +27,13 @@ const (
 	pingPeriod = (pongWait * 9) / 10
 )
 
+type RoomSettings struct {
+	PlayersInRoom int    `json:"playersInRoom"`
+	Private       bool   `json:"private"`
+	Password      string `json:"password"`
+	MinBet        int    `json:"minBet"`
+}
+
 type HandlersGame struct {
 	Usecase *repository.LeadersRepository
 }
@@ -70,7 +77,7 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 		for {
 			if len(core.FreeRooms) == 2 {
 				for i := 0; i < 4; i++ {
-					core.NewRoom("")
+					core.NewRoom("", 2, false, "", 20)
 				}
 			}
 			var rooms = map[string]*RoomsInside{}
@@ -120,6 +127,16 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 	return nil
 }
 
+func (h *HandlersGame) CreateRoom(ctx echo.Context) error {
+	roomSettings := new(RoomSettings)
+	if err := ctx.Bind(roomSettings); err != nil {
+		return ctx.JSON(http.StatusBadRequest, "")
+	}
+	core.NewRoom("", roomSettings.PlayersInRoom, roomSettings.Private,
+		roomSettings.Password, roomSettings.MinBet)
+	return nil
+}
+
 func (h *HandlersGame) WsHandler(ctx echo.Context) error {
 	ws, err := websocket.Upgrade(ctx.Response(), ctx.Request(), nil, 1024, 1024)
 	if _, ok := err.(websocket.HandshakeError); ok {
@@ -162,7 +179,7 @@ func (h *HandlersGame) WsHandler(ctx echo.Context) error {
 	if roomName != "newRoom" {
 		room = core.AllRooms[roomName]
 	} else {
-		room = core.NewRoom("")
+		room = core.NewRoom("", 2, false, "", 20)
 	}
 
 	// Create Player and Conn
