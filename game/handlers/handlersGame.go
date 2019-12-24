@@ -62,7 +62,7 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 		return err
 	}
 
-	keepAlive(ws, pingPeriod)
+	go keepAlive(ws, pingPeriod)
 
 	go func() {
 		for {
@@ -126,7 +126,7 @@ func (h *HandlersGame) WsHandler(ctx echo.Context) error {
 		return err
 	}
 
-	keepAlive(ws, pingPeriod)
+	go keepAlive(ws, pingPeriod)
 
 	params, err := url.ParseQuery(ctx.Request().URL.RawQuery)
 	if err != nil || !(len(params["id"]) > 0) {
