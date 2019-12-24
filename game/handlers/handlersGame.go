@@ -65,6 +65,7 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 
 	go keepAlive(ws, pingPeriod)
 
+	var mu sync.Mutex
 	go func() {
 		for {
 			if len(core.FreeRooms) == 2 {
@@ -105,8 +106,9 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 			msg := &JSONRooms{
 				Rooms: rooms,
 			}
-
+			mu.Lock()
 			err := ws.WriteJSON(msg)
+			mu.Unlock()
 			if err != nil {
 				log.Println(err)
 				ws.Close()
