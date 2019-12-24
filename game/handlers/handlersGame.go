@@ -70,6 +70,8 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 		return err
 	}
 
+	go keepAlive(ws, pingPeriod)
+
 	var mu sync.Mutex
 	go func() {
 		for {
@@ -202,13 +204,13 @@ func keepAlive(c *websocket.Conn, timeout time.Duration) {
 	var mu sync.Mutex
 	go func() {
 		for {
+			time.Sleep(timeout + 1)
 			mu.Lock()
 			err := c.WriteMessage(websocket.PingMessage, []byte("keepalive"))
 			mu.Unlock()
 			if err != nil {
 				return
 			}
-			time.Sleep(timeout)
 		}
 	}()
 }
