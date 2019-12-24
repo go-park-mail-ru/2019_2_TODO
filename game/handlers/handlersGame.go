@@ -18,6 +18,12 @@ import (
 
 const (
 	LEADERSSIZE int = 10
+
+	// Time allowed to read the next pong message from the peer.
+	pongWait = 60 * time.Second
+
+	// Send pings to peer with this period. Must be less than pongWait.
+	pingPeriod = (pongWait * 9) / 10
 )
 
 type HandlersGame struct {
@@ -55,6 +61,8 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 	} else if err != nil {
 		return err
 	}
+
+	keepAlive(ws, pingPeriod)
 
 	go func() {
 		for {
@@ -118,6 +126,8 @@ func (h *HandlersGame) WsHandler(ctx echo.Context) error {
 		return err
 	}
 
+	keepAlive(ws, pingPeriod)
+
 	params, err := url.ParseQuery(ctx.Request().URL.RawQuery)
 	if err != nil || !(len(params["id"]) > 0) {
 		return ctx.JSON(http.StatusInternalServerError, "Smth wrong with parseQuery")
@@ -161,6 +171,28 @@ func (h *HandlersGame) WsHandler(ctx echo.Context) error {
 	log.Printf("Player: %s has joined to room: %s", pConn.Name, room.Name)
 
 	return nil
+}
+
+func keepAlive(c *websocket.Conn, timeout time.Duration) {
+	lastResponse := time.Now()
+	c.SetPongHandler(func(msg string) error {
+		lastResponse = time.Now()
+		return nil
+	})
+
+	go func() {
+		for {
+			err := c.WriteMessage(websocket.PingMessage, []byte("keepalive"))
+			if err != nil {
+				return
+			}
+			time.Sleep(timeout / 2)
+			if time.Now().Sub(lastResponse) > timeout {
+				c.Close()
+				return
+			}
+		}
+	}()
 }
 
 func (h *HandlersGame) LeaderBoardTopHandler(ctx echo.Context) error {
