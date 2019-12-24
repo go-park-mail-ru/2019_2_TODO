@@ -16,11 +16,11 @@ var AllRooms = make(map[string]*Room)
 var FreeRooms = make(map[string]*Room)
 var RoomsCount int
 
-func init() {
-	for i := 0; i < 4; i++ {
-		NewRoom("", 2, false, "", 20)
-	}
-}
+// func init() {
+// 	for i := 0; i < 4; i++ {
+// 		NewRoom("", 2, false, "", 20)
+// 	}
+// }
 
 type Room struct {
 	Name             string
@@ -60,7 +60,7 @@ func (r *Room) run() {
 			r.updateLastPlayer(c, "addPlayer")
 
 			// if room is full - delete from freeRooms
-			if len(r.PlayerConns) == 2 {
+			if len(r.PlayerConns) == r.PlayersInRoom {
 				delete(FreeRooms, r.Name)
 			}
 
@@ -135,7 +135,7 @@ func (r *Room) run() {
 			}
 		EndFoldGame:
 			r.mu.Lock()
-			allReady := (r.RoomReadyCounter == 2)
+			allReady := (r.RoomReadyCounter == int32(r.PlayersInRoom))
 			started := r.RoomStartRound
 			r.mu.Unlock()
 			if allReady && !started {

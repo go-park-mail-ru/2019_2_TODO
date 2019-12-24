@@ -46,6 +46,7 @@ type PlayerInRoom struct {
 type RoomsInside struct {
 	Places       int             `json:"places"`
 	ActualPlaces int             `json:"actualPlaces"`
+	Bet          int             `json:"minBet"`
 	Players      []*PlayerInRoom `json:"players"`
 }
 
@@ -75,17 +76,18 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 	var mu sync.Mutex
 	go func() {
 		for {
-			if len(core.FreeRooms) == 2 {
-				for i := 0; i < 4; i++ {
-					core.NewRoom("", 2, false, "", 20)
-				}
-			}
+			// if len(core.FreeRooms) == 2 {
+			// 	for i := 0; i < 4; i++ {
+			// 		core.NewRoom("", 2, false, "", 20)
+			// 	}
+			// }
 			var rooms = map[string]*RoomsInside{}
 			for r, room := range core.FreeRooms {
 				playersInRoom := []*PlayerInRoom{}
 				roomInside := &RoomsInside{
-					Places:       2,
+					Places:       room.PlayersInRoom,
 					ActualPlaces: len(room.PlayerConns),
+					Bet:          room.RoomMinBet,
 					Players:      []*PlayerInRoom{},
 				}
 				if len(room.PlayerConns) > 0 {
@@ -102,8 +104,9 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 						playersInRoom = append(playersInRoom, player)
 					}
 					roomInside = &RoomsInside{
-						Places:       2,
+						Places:       room.PlayersInRoom,
 						ActualPlaces: len(room.PlayerConns),
+						Bet:          room.RoomMinBet,
 						Players:      playersInRoom,
 					}
 				}
@@ -113,6 +116,7 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 			msg := &JSONRooms{
 				Rooms: rooms,
 			}
+
 			mu.Lock()
 			err := ws.WriteJSON(msg)
 			mu.Unlock()
