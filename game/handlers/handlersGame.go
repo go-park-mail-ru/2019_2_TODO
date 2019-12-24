@@ -192,11 +192,7 @@ func keepAlive(c *websocket.Conn, timeout time.Duration) {
 			if err != nil {
 				return
 			}
-			time.Sleep(timeout / 2)
-			if time.Now().Sub(lastResponse) > timeout {
-				c.Close()
-				return
-			}
+			time.Sleep(timeout)
 		}
 	}()
 }
