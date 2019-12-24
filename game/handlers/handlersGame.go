@@ -86,7 +86,11 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 						Players:      playersInRoom,
 					}
 				} else {
-					roomInside = &RoomsInside{}
+					roomInside = &RoomsInside{
+						Places:       2,
+						ActualPlaces: len(room.PlayerConns),
+						Players:      []*PlayerInRoom{},
+					}
 				}
 				rooms[r] = roomInside
 			}
