@@ -64,9 +64,13 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 				}
 			}
 			var rooms = map[string]*RoomsInside{}
-			var playersInRoom = []*PlayerInRoom{}
-			var roomInside = &RoomsInside{}
 			for r, room := range core.FreeRooms {
+				playersInRoom := []*PlayerInRoom{}
+				roomInside := &RoomsInside{
+					Places:       2,
+					ActualPlaces: len(room.PlayerConns),
+					Players:      []*PlayerInRoom{},
+				}
 				if len(room.PlayerConns) > 0 {
 					for pl := range room.PlayerConns {
 						userData, err := h.Usecase.SelectUserByID(int64(pl.ID))
@@ -84,12 +88,6 @@ func (h *HandlersGame) GetRooms(ctx echo.Context) error {
 						Places:       2,
 						ActualPlaces: len(room.PlayerConns),
 						Players:      playersInRoom,
-					}
-				} else {
-					roomInside = &RoomsInside{
-						Places:       2,
-						ActualPlaces: len(room.PlayerConns),
-						Players:      []*PlayerInRoom{},
 					}
 				}
 				rooms[r] = roomInside
