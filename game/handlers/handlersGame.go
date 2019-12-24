@@ -132,6 +132,7 @@ func (h *HandlersGame) CreateRoom(ctx echo.Context) error {
 	if err := ctx.Bind(roomSettings); err != nil {
 		return ctx.JSON(http.StatusBadRequest, "")
 	}
+
 	core.NewRoom("", roomSettings.PlayersInRoom, roomSettings.Private,
 		roomSettings.Password, roomSettings.MinBet)
 	return nil
