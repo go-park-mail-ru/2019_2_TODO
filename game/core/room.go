@@ -98,7 +98,7 @@ func (r *Room) run() {
 					goto EndFoldGame
 				}
 				r.Game.PlayerCounterChange()
-				if r.Game.PlayerCounter == r.Game.Dealer {
+				if r.Game.PlayerCounter == r.Game.PositionToNextStage {
 					r.Game.StageCounterChange()
 					r.setBank()
 					r.updateAllPlayersBank("setBank")
@@ -157,7 +157,9 @@ func (r *Room) run() {
 				r.Game.StartGame()
 				r.updateAllPlayersBank("setBank")
 				r.Game.MaxBet = r.Game.MinBet * 2
+				r.mu.Lock()
 				r.RoomStartRound = true
+				r.mu.Unlock()
 				if r.Game.Players[r.Game.PlayerCounter].Bet < r.Game.MaxBet {
 					r.Game.Players[r.Game.PlayerCounter].CallCheck = "call"
 				} else {

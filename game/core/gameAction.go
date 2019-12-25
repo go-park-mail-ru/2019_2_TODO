@@ -3,14 +3,15 @@ package core
 import "github.com/go-park-mail-ru/2019_2_TODO/tree/devRK/game/hand"
 
 type Game struct {
-	Players       []*playerConn
-	TableCards    []hand.Card
-	Bank          int
-	Dealer        int
-	MinBet        int
-	PlayerCounter int
-	MaxBet        int
-	StageCounter  int
+	Players             []*playerConn
+	TableCards          []hand.Card
+	Bank                int
+	Dealer              int
+	MinBet              int
+	PlayerCounter       int
+	MaxBet              int
+	StageCounter        int
+	PositionToNextStage int
 }
 
 func (game *Game) StartGame() {
@@ -25,6 +26,7 @@ func (game *Game) StartGame() {
 
 	game.TableCards = deck.Draw(5)
 	game.SetBlind()
+	game.PositionToNextStage = game.PlayerCounter
 }
 
 func (game *Game) DealerChange() {

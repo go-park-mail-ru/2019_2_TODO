@@ -85,6 +85,7 @@ func (pc *playerConn) Command(command string) string {
 		pc.Player.Bet = bet
 		pc.Player.Chips -= bet
 		pc.Room.Game.MaxBet = bet
+		pc.Room.Game.PositionToNextStage = pc.Room.Game.PlayerCounter
 	}
 	return command
 }
