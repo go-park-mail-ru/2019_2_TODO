@@ -121,6 +121,10 @@ func (r *Room) run() {
 						r.RoomReadyCounter = 0
 						r.RoomStartRound = false
 						r.mu.Unlock()
+						for conn := range r.PlayerConns {
+							r.updateAllPlayers(conn, "updatePlayerScore")
+						}
+						goto EndFoldGame
 					}
 					for conn := range r.PlayerConns {
 						r.updateAllPlayers(conn, "updatePlayerScore")
