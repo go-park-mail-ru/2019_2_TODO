@@ -78,8 +78,8 @@ func (pc *playerConn) Command(command string) string {
 			pc.Player.Chips = 0
 		} else {
 			pc.Player.Chips -= pc.Room.Game.MaxBet - pc.Player.Bet
+			pc.Player.Bet = pc.Room.Game.MaxBet
 		}
-		pc.Player.Bet = pc.Room.Game.MaxBet
 		command = "updatePlayerScore"
 	} else {
 		raiseCommand := strings.Split(command, " ")

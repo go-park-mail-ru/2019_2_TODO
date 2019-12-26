@@ -97,6 +97,7 @@ func (r *Room) run() {
 					r.mu.Unlock()
 					goto EndFoldGame
 				}
+			SkipPlayer:
 				r.Game.PlayerCounterChange()
 				if r.Game.PlayerCounter == r.Game.PositionToNextStage {
 					r.Game.StageCounterChange()
@@ -135,9 +136,9 @@ func (r *Room) run() {
 				} else {
 					r.Game.Players[r.Game.PlayerCounter].CallCheck = "check"
 				}
-				for r.Game.Players[r.Game.PlayerCounter].Player.AllIn ||
+				if r.Game.Players[r.Game.PlayerCounter].Player.AllIn ||
 					r.Game.Players[r.Game.PlayerCounter].Player.Fold {
-					r.Game.PlayerCounterChange()
+					goto SkipPlayer
 				}
 				r.updateAllPlayers(r.Game.Players[r.Game.PlayerCounter], "enablePlayer")
 			}
