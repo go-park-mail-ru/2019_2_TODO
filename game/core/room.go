@@ -149,6 +149,26 @@ func (r *Room) run() {
 				r.updateAllPlayers(r.Game.Players[r.Game.PlayerCounter], "enablePlayer")
 			}
 		EndFoldGame:
+			for conn := range r.PlayerConns {
+				if conn.Chips <= 0 {
+					conn.GiveUp()
+					userData := &leaderBoardModel.UserLeaderBoard{
+						ID:       int64(c.Player.ID),
+						Username: conn.Player.Name,
+						Points:   strconv.Itoa(conn.Player.Chips + conn.Player.Bet),
+					}
+					newConn := repository.NewUserMemoryRepository()
+					_, err := newConn.UpdateLeader(userData)
+					if err != nil {
+						log.Println(err)
+					}
+					r.updateAllPlayersExceptYou(conn, "removePlayer")
+					delete(r.PlayerConns, conn)
+				}
+			}
+			if len(r.PlayerConns) == 0 {
+				goto Exit
+			}
 			r.mu.Lock()
 			allReady := (r.RoomReadyCounter == int32(r.PlayersInRoom))
 			started := r.RoomStartRound

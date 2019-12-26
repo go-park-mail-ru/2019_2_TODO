@@ -45,14 +45,26 @@ func (game *Game) PlayerCounterChange() {
 }
 
 func (game *Game) SetBlind() {
-	game.Players[game.PlayerCounter].Bet = game.MinBet
-	game.Players[game.PlayerCounter].Chips -= game.MinBet
+	if game.Players[game.PlayerCounter].Chips < game.MinBet {
+		game.Players[game.PlayerCounter].Player.AllIn = true
+		game.Players[game.PlayerCounter].Player.Bet = game.Players[game.PlayerCounter].Chips
+		game.Players[game.PlayerCounter].Chips = 0
+	} else {
+		game.Players[game.PlayerCounter].Bet = game.MinBet
+		game.Players[game.PlayerCounter].Chips -= game.MinBet
+	}
 	for _, player := range game.Players {
 		player.sendNewPlayer(game.Players[game.PlayerCounter], "updatePlayerScore")
 	}
 	game.PlayerCounterChange()
-	game.Players[game.PlayerCounter].Bet = game.MinBet * 2
-	game.Players[game.PlayerCounter].Chips -= game.MinBet * 2
+	if game.Players[game.PlayerCounter].Chips < game.MinBet*2 {
+		game.Players[game.PlayerCounter].Player.AllIn = true
+		game.Players[game.PlayerCounter].Player.Bet = game.Players[game.PlayerCounter].Chips
+		game.Players[game.PlayerCounter].Chips = 0
+	} else {
+		game.Players[game.PlayerCounter].Bet = game.MinBet * 2
+		game.Players[game.PlayerCounter].Chips -= game.MinBet * 2
+	}
 	for _, player := range game.Players {
 		player.sendNewPlayer(game.Players[game.PlayerCounter], "updatePlayerScore")
 	}
