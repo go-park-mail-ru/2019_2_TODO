@@ -98,6 +98,11 @@ func (r *Room) run() {
 					goto EndFoldGame
 				}
 			SkipPlayer:
+				if r.Game.AllInCounter == len(r.PlayerConns)-1 {
+					for conn := range r.PlayerConns {
+						r.updateAllPlayers(conn, "showPlayerCards")
+					}
+				}
 				r.Game.PlayerCounterChange()
 				if r.Game.PlayerCounter == r.Game.PositionToNextStage {
 					r.Game.StageCounterChange()
@@ -137,7 +142,8 @@ func (r *Room) run() {
 					r.Game.Players[r.Game.PlayerCounter].CallCheck = "check"
 				}
 				if r.Game.Players[r.Game.PlayerCounter].Player.AllIn ||
-					r.Game.Players[r.Game.PlayerCounter].Player.Fold {
+					r.Game.Players[r.Game.PlayerCounter].Player.Fold ||
+					(r.Game.AllInCounter == len(r.PlayerConns)-1) {
 					goto SkipPlayer
 				}
 				r.updateAllPlayers(r.Game.Players[r.Game.PlayerCounter], "enablePlayer")

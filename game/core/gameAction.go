@@ -12,6 +12,7 @@ type Game struct {
 	MaxBet              int
 	StageCounter        int
 	PositionToNextStage int
+	AllInCounter        int
 }
 
 func (game *Game) StartGame() {

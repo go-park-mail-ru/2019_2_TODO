@@ -95,6 +95,7 @@ func (pc *playerConn) Command(command string) string {
 	}
 	if pc.Player.Chips == 0 {
 		pc.Player.AllIn = true
+		pc.Room.Game.AllInCounter++
 	}
 	return command
 }
