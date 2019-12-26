@@ -51,6 +51,7 @@ func (pc *playerConn) Command(command string) string {
 	if command == "fold" {
 		pc.Player.Hand = []hand.Card{}
 		pc.Player.Active = false
+		pc.Player.Fold = true
 		counterOfActivePlayers := 0
 		pc.Room.Game.Bank += pc.Player.Bet
 		for c := range pc.Room.PlayerConns {
@@ -72,7 +73,12 @@ func (pc *playerConn) Command(command string) string {
 	} else if command == "check" {
 		command = "setCheck"
 	} else if command == "call" {
-		pc.Player.Chips -= pc.Room.Game.MaxBet - pc.Player.Bet
+		if pc.Player.Chips < (pc.Room.Game.MaxBet - pc.Player.Bet) {
+			pc.Player.Bet += pc.Player.Chips
+			pc.Player.Chips = 0
+		} else {
+			pc.Player.Chips -= pc.Room.Game.MaxBet - pc.Player.Bet
+		}
 		pc.Player.Bet = pc.Room.Game.MaxBet
 		command = "updatePlayerScore"
 	} else {
@@ -86,6 +92,9 @@ func (pc *playerConn) Command(command string) string {
 		pc.Player.Chips -= bet
 		pc.Room.Game.MaxBet = bet
 		pc.Room.Game.PositionToNextStage = pc.Room.Game.PlayerCounter
+	}
+	if pc.Player.Chips == 0 {
+		pc.Player.AllIn = true
 	}
 	return command
 }

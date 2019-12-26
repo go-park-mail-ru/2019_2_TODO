@@ -135,6 +135,10 @@ func (r *Room) run() {
 				} else {
 					r.Game.Players[r.Game.PlayerCounter].CallCheck = "check"
 				}
+				for r.Game.Players[r.Game.PlayerCounter].Player.AllIn ||
+					r.Game.Players[r.Game.PlayerCounter].Player.Fold {
+					r.Game.PlayerCounterChange()
+				}
 				r.updateAllPlayers(r.Game.Players[r.Game.PlayerCounter], "enablePlayer")
 			}
 		EndFoldGame:

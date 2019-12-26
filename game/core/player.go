@@ -27,6 +27,8 @@ type Player struct {
 	Bet       int
 	CallCheck string
 	Active    bool
+	AllIn     bool
+	Fold      bool
 }
 
 func NewPlayer(IDPlayer int, name string, chips int) *Player {
