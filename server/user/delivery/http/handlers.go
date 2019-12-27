@@ -109,20 +109,12 @@ func (h *Handlers) handleSignIn(ctx echo.Context) error {
 	}
 
 	passToCheck, err := base64.StdEncoding.DecodeString(userRecord.Password)
-	userPassHash := utils.ConvertPass(authCredentials.Password)
-	log.Println("-------------------------------------------------------------")
-	log.Println("My pass: ", authCredentials.Password)
-	log.Println("Pass from bd: ", userRecord.Password)
-	log.Println("Pass to check: ", passToCheck)
-	log.Println("MyPass: ", userPassHash)
-	log.Println(err)
-	log.Println("-------------------------------------------------------------")
 
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, "Problems with Decoding")
 	}
 
-	if !utils.CheckPass(userPassHash, userRecord.Password) {
+	if !utils.CheckPass(passToCheck, authCredentials.Password) {
 		return ctx.JSON(http.StatusUnauthorized, "Incorrect password!")
 	}
 
