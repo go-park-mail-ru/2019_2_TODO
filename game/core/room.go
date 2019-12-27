@@ -77,6 +77,7 @@ func (r *Room) run() {
 				log.Println(err)
 			}
 			r.updateAllPlayersExceptYou(c, "removePlayer")
+			c.sendState("removePlayer")
 			delete(r.PlayerConns, c)
 			if len(r.PlayerConns) == 0 {
 				goto Exit
@@ -170,6 +171,7 @@ func (r *Room) run() {
 							log.Println(err)
 						}
 						r.updateAllPlayersExceptYou(conn, "removePlayer")
+						c.sendState("removePlayer")
 						delete(r.PlayerConns, conn)
 					}
 				}
