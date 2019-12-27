@@ -88,9 +88,9 @@ func (pc *playerConn) Command(command string) string {
 		if err != nil {
 			log.Println("error")
 		}
-		pc.Player.Bet = bet
-		pc.Player.Chips -= bet
-		pc.Room.Game.MaxBet = bet
+		pc.Player.Bet += bet
+		pc.Player.Chips -= pc.Player.Bet
+		pc.Room.Game.MaxBet = pc.Player.Bet
 		pc.Room.Game.PositionToNextStage = pc.Room.Game.PlayerCounter
 	}
 	if pc.Player.Chips == 0 {
