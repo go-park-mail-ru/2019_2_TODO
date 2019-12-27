@@ -116,8 +116,12 @@ func (h *Handlers) handleSignIn(ctx echo.Context) error {
 	log.Println(err)
 	log.Println("-------------------------------------------------------------")
 
-	if err != nil || !utils.CheckPass(passToCheck, authCredentials.Password) {
+	if utils.CheckPass(passToCheck, authCredentials.Password) != true {
 		return ctx.JSON(http.StatusUnauthorized, "Incorrect password!")
+	}
+
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, "Problems with Decoding")
 	}
 
 	log.Println("UserData: ID - ", userRecord.ID, " Login - ", userRecord.Username,
