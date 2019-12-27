@@ -155,6 +155,8 @@ func (r *Room) run() {
 			r.mu.Unlock()
 			if allReady && !started {
 				for conn := range r.PlayerConns {
+					conn.AllIn = false
+					conn.Fold = false
 					if conn.Chips <= 0 {
 						conn.GiveUp()
 						userData := &leaderBoardModel.UserLeaderBoard{
