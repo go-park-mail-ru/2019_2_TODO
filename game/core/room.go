@@ -168,7 +168,7 @@ func (r *Room) run() {
 							log.Println(err)
 						}
 						r.updateAllPlayersExceptYou(conn, "removePlayer")
-						c.sendState("removePlayer")
+						conn.sendState("removePlayer")
 						delete(r.PlayerConns, conn)
 					}
 				}
