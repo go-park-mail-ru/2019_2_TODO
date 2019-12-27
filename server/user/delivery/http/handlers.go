@@ -1,6 +1,7 @@
 package http
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"io"
@@ -109,14 +110,17 @@ func (h *Handlers) handleSignIn(ctx echo.Context) error {
 	}
 
 	passToCheck, err := base64.StdEncoding.DecodeString(userRecord.Password)
+	salt := passToCheck[0:8]
+	userPassHash := utils.HashPass(salt, authCredentials.Password)
 	log.Println("-------------------------------------------------------------")
 	log.Println("My pass: ", authCredentials.Password)
 	log.Println("Pass from bd: ", userRecord.Password)
 	log.Println("Pass to check: ", passToCheck)
+	log.Println("MyPass: ", userPassHash)
 	log.Println(err)
 	log.Println("-------------------------------------------------------------")
 
-	if utils.CheckPass(passToCheck, authCredentials.Password) {
+	if !bytes.Equal(userPassHash, passToCheck) {
 		return ctx.JSON(http.StatusUnauthorized, "Incorrect password!")
 	}
 
