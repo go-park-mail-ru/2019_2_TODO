@@ -77,7 +77,6 @@ func (r *Room) run() {
 				log.Println(err)
 			}
 			r.updateAllPlayersExceptYou(c, "removePlayer")
-			c.sendState("removePlayer")
 			delete(r.PlayerConns, c)
 
 		case c := <-r.UpdateAll:
@@ -223,6 +222,8 @@ func (r *Room) endGame() []hand.Card {
 	var bestRank int32 = 7463
 	var player *playerConn
 	for c := range r.PlayerConns {
+		log.Println(c.Player.ID)
+		log.Println(c.Player.Hand)
 		currentHand := c.Player.Hand
 		currentHand = append(currentHand, r.Game.TableCards...)
 		rankCurrentHand := hand.Evaluate(currentHand)
