@@ -120,7 +120,13 @@ type jsonMinBet struct {
 	MinBet  int    `json:"minbet"`
 }
 
-func (pc *playerConn) sendMinBet(command string, minBet int) {
+func (pc *playerConn) sendMinBet(command string, maxBetInGame int) {
+	var minBet int
+	if (maxBetInGame - pc.Player.Bet) < pc.Room.Game.MinBet {
+		minBet = pc.Room.Game.MinBet
+	} else {
+		minBet = maxBetInGame - pc.Player.Bet
+	}
 	msgState := &jsonMinBet{
 		Command: command,
 		MinBet:  minBet,
