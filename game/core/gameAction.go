@@ -48,6 +48,7 @@ func (game *Game) PlayerCounterChange() {
 func (game *Game) SetBlind() {
 	if game.Players[game.PlayerCounter].Chips < game.MinBet {
 		game.Players[game.PlayerCounter].Player.AllIn = true
+		game.AllInCounter++
 		game.Players[game.PlayerCounter].Player.Bet = game.Players[game.PlayerCounter].Chips
 		game.Players[game.PlayerCounter].Chips = 0
 	} else {
@@ -60,6 +61,7 @@ func (game *Game) SetBlind() {
 	game.PlayerCounterChange()
 	if game.Players[game.PlayerCounter].Chips < game.MinBet*2 {
 		game.Players[game.PlayerCounter].Player.AllIn = true
+		game.AllInCounter++
 		game.Players[game.PlayerCounter].Player.Bet = game.Players[game.PlayerCounter].Chips
 		game.Players[game.PlayerCounter].Chips = 0
 	} else {
