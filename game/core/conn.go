@@ -116,8 +116,11 @@ func (pc *playerConn) sendState(command string) {
 }
 
 type jsonMinBet struct {
-	Command string `json:"command"`
-	MinBet  int    `json:"minbet"`
+	MinBet int `json:"minbet"`
+}
+
+type jsonMinBetMsg struct {
+	Command map[string]*jsonMinBet
 }
 
 func (pc *playerConn) sendMinBet(command string, maxBetInGame int) {
@@ -128,10 +131,14 @@ func (pc *playerConn) sendMinBet(command string, maxBetInGame int) {
 		minBet = maxBetInGame - pc.Player.Bet
 	}
 	msgState := &jsonMinBet{
-		Command: command,
-		MinBet:  minBet,
+		MinBet: minBet,
 	}
-	err := pc.ws.WriteJSON(msgState)
+	var cmd = make(map[string]*jsonMinBet)
+	cmd[command] = msgState
+	msg := &jsonMinBetMsg{
+		Command: cmd,
+	}
+	err := pc.ws.WriteJSON(msg)
 	if err != nil {
 		pc.Room.Leave <- pc
 		pc.ws.Close()
