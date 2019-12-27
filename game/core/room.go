@@ -69,15 +69,17 @@ func (r *Room) run() {
 			userData := &leaderBoardModel.UserLeaderBoard{
 				ID:       int64(c.Player.ID),
 				Username: c.Player.Name,
-				Points:   strconv.Itoa(c.Player.Chips + c.Player.Bet),
+				Points:   strconv.Itoa(c.Player.Chips),
 			}
 			newConn := repository.NewUserMemoryRepository()
 			_, err := newConn.UpdateLeader(userData)
 			if err != nil {
 				log.Println(err)
 			}
-			r.updateAllPlayersExceptYou(c, "removePlayer")
-			delete(r.PlayerConns, c)
+			// r.updateAllPlayersExceptYou(c, "removePlayer")
+			c.Leave = true
+			c.Fold = true
+			// delete(r.PlayerConns, c)
 
 		case c := <-r.UpdateAll:
 			if r.RoomStartRound {
@@ -154,6 +156,12 @@ func (r *Room) run() {
 			r.mu.Unlock()
 			if allReady && !started {
 				for conn := range r.PlayerConns {
+					if conn.Leave {
+						r.updateAllPlayersExceptYou(conn, "removePlayer")
+						delete(r.PlayerConns, conn)
+					}
+				}
+				for conn := range r.PlayerConns {
 					conn.AllIn = false
 					conn.Fold = false
 					if conn.Chips <= 0 {
@@ -161,7 +169,7 @@ func (r *Room) run() {
 						userData := &leaderBoardModel.UserLeaderBoard{
 							ID:       int64(c.Player.ID),
 							Username: conn.Player.Name,
-							Points:   strconv.Itoa(conn.Player.Chips + conn.Player.Bet),
+							Points:   strconv.Itoa(conn.Player.Chips),
 						}
 						newConn := repository.NewUserMemoryRepository()
 						_, err := newConn.UpdateLeader(userData)

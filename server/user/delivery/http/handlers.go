@@ -109,6 +109,12 @@ func (h *Handlers) handleSignIn(ctx echo.Context) error {
 	}
 
 	passToCheck, err := base64.StdEncoding.DecodeString(userRecord.Password)
+	log.Println("-------------------------------------------------------------")
+	log.Println("My pass: ", authCredentials.Password)
+	log.Println("Pass from bd: ", userRecord.Password)
+	log.Println("Pass to check: ", passToCheck)
+	log.Println(err)
+	log.Println("-------------------------------------------------------------")
 
 	if err != nil || !utils.CheckPass(passToCheck, authCredentials.Password) {
 		return ctx.JSON(http.StatusUnauthorized, "Incorrect password!")

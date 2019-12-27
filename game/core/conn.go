@@ -128,7 +128,7 @@ func (pc *playerConn) sendMinBet(command string, maxBetInGame int) {
 	if (maxBetInGame - pc.Player.Bet) < pc.Room.Game.MinBet {
 		minBet = pc.Room.Game.MinBet
 	} else {
-		minBet = maxBetInGame - pc.Player.Bet
+		minBet = maxBetInGame - pc.Player.Bet + pc.Room.Game.MinBet
 	}
 	msgState := &jsonMinBet{
 		MinBet: minBet,

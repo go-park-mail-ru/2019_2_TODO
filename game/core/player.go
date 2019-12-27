@@ -29,6 +29,7 @@ type Player struct {
 	Active    bool
 	AllIn     bool
 	Fold      bool
+	Leave     bool
 }
 
 func NewPlayer(IDPlayer int, name string, chips int) *Player {
