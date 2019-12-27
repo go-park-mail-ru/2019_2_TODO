@@ -36,7 +36,7 @@ var (
 const (
 	ListenAddr = "172.26.112.3:443"
 	FrontIP    = "http://93.171.139.195:780"
-	FrontIPNew = "https://www.pokertodo.ru:743"
+	FrontIPNew = "https://www.pokertodo.ru"
 )
 
 func main() {
