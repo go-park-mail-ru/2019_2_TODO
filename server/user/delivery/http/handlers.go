@@ -110,8 +110,7 @@ func (h *Handlers) handleSignIn(ctx echo.Context) error {
 	}
 
 	passToCheck, err := base64.StdEncoding.DecodeString(userRecord.Password)
-	salt := passToCheck[0:8]
-	userPassHash := utils.HashPass(salt, authCredentials.Password)
+	userPassHash := utils.ConvertPass(authCredentials.Password)
 	log.Println("-------------------------------------------------------------")
 	log.Println("My pass: ", authCredentials.Password)
 	log.Println("Pass from bd: ", userRecord.Password)
@@ -120,12 +119,12 @@ func (h *Handlers) handleSignIn(ctx echo.Context) error {
 	log.Println(err)
 	log.Println("-------------------------------------------------------------")
 
-	if !bytes.Equal(userPassHash, passToCheck) {
-		return ctx.JSON(http.StatusUnauthorized, "Incorrect password!")
-	}
-
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, "Problems with Decoding")
+	}
+
+	if !bytes.Equal(passToCheck[8:], userPassHash[8:]) {
+		return ctx.JSON(http.StatusUnauthorized, "Incorrect password!")
 	}
 
 	log.Println("UserData: ID - ", userRecord.ID, " Login - ", userRecord.Username,
