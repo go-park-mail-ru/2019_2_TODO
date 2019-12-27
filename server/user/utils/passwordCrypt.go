@@ -3,6 +3,7 @@ package utils
 import (
 	"bytes"
 	"crypto/rand"
+	"log"
 
 	"golang.org/x/crypto/argon2"
 )
@@ -15,8 +16,10 @@ func HashPass(salt []byte, plainPassword string) []byte {
 
 // CheckPass - check equals of 2 hashes
 func CheckPass(passHash []byte, plainPassword string) bool {
+	log.Println("plainPassword hash:", plainPassword)
 	salt := passHash[0:8]
 	userPassHash := HashPass(salt, plainPassword)
+	log.Println("User hash:", userPassHash)
 	return bytes.Equal(userPassHash, passHash)
 }
 
