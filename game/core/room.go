@@ -79,9 +79,7 @@ func (r *Room) run() {
 			r.updateAllPlayersExceptYou(c, "removePlayer")
 			c.sendState("removePlayer")
 			delete(r.PlayerConns, c)
-			if len(r.PlayerConns) == 0 {
-				goto Exit
-			}
+
 		case c := <-r.UpdateAll:
 			if r.RoomStartRound {
 				if r.Command == "endFoldGame" {
@@ -225,8 +223,6 @@ func (r *Room) endGame() []hand.Card {
 	var bestRank int32 = 7463
 	var player *playerConn
 	for c := range r.PlayerConns {
-		log.Println(c.Player.ID)
-		log.Println(c.Player.Hand)
 		currentHand := c.Player.Hand
 		currentHand = append(currentHand, r.Game.TableCards...)
 		rankCurrentHand := hand.Evaluate(currentHand)
