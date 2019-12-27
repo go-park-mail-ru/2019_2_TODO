@@ -49,6 +49,7 @@ func (pc *playerConn) receiver() {
 func (pc *playerConn) Command(command string) string {
 	log.Print("Command: '", command, "' received by player: ", pc.Player.Name)
 	if command == "fold" {
+		pc.Room.Game.ActivePlayers--
 		pc.Player.Hand = []hand.Card{}
 		pc.Player.Active = false
 		pc.Player.Fold = true
@@ -108,6 +109,23 @@ func (pc *playerConn) sendState(command string) {
 		Command: cmd,
 	}
 	err := pc.ws.WriteJSON(msg)
+	if err != nil {
+		pc.Room.Leave <- pc
+		pc.ws.Close()
+	}
+}
+
+type jsonMinBet struct {
+	Command string `json:"command"`
+	MinBet  int    `json:"minbet"`
+}
+
+func (pc *playerConn) sendMinBet(command string, minBet int) {
+	msgState := &jsonMinBet{
+		Command: command,
+		MinBet:  minBet,
+	}
+	err := pc.ws.WriteJSON(msgState)
 	if err != nil {
 		pc.Room.Leave <- pc
 		pc.ws.Close()

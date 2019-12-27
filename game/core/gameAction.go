@@ -13,6 +13,7 @@ type Game struct {
 	StageCounter        int
 	PositionToNextStage int
 	AllInCounter        int
+	ActivePlayers       int
 }
 
 func (game *Game) StartGame() {
@@ -55,6 +56,7 @@ func (game *Game) SetBlind() {
 		game.Players[game.PlayerCounter].Bet = game.MinBet
 		game.Players[game.PlayerCounter].Chips -= game.MinBet
 	}
+	game.MaxBet = game.Players[game.PlayerCounter].Bet
 	for _, player := range game.Players {
 		player.sendNewPlayer(game.Players[game.PlayerCounter], "updatePlayerScore")
 	}
@@ -70,6 +72,9 @@ func (game *Game) SetBlind() {
 	}
 	for _, player := range game.Players {
 		player.sendNewPlayer(game.Players[game.PlayerCounter], "updatePlayerScore")
+	}
+	if game.MaxBet < game.Players[game.PlayerCounter].Bet {
+		game.MaxBet = game.Players[game.PlayerCounter].Bet
 	}
 	game.PlayerCounterChange()
 }

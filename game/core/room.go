@@ -96,7 +96,7 @@ func (r *Room) run() {
 					goto EndFoldGame
 				}
 			SkipPlayer:
-				if r.Game.AllInCounter == len(r.PlayerConns)-1 {
+				if r.Game.AllInCounter == r.Game.ActivePlayers {
 					for conn := range r.PlayerConns {
 						r.updateAllPlayers(conn, "showPlayerCards")
 					}
@@ -141,10 +141,11 @@ func (r *Room) run() {
 				}
 				if r.Game.Players[r.Game.PlayerCounter].Player.AllIn ||
 					r.Game.Players[r.Game.PlayerCounter].Player.Fold ||
-					(r.Game.AllInCounter == len(r.PlayerConns)-1) {
+					(r.Game.AllInCounter == r.Game.ActivePlayers) {
 					goto SkipPlayer
 				}
 				r.updateAllPlayers(r.Game.Players[r.Game.PlayerCounter], "enablePlayer")
+				r.Game.Players[r.Game.PlayerCounter].sendMinBet("minBet", r.Game.MaxBet)
 			}
 		EndFoldGame:
 			r.mu.Lock()
@@ -189,6 +190,7 @@ func (r *Room) run() {
 					MinBet:        r.RoomMinBet,
 					PlayerCounter: 0,
 					StageCounter:  0,
+					ActivePlayers: len(r.PlayerConns),
 				}
 				r.Game.StartGame()
 				r.updateAllPlayersBank("setBank")
@@ -202,6 +204,7 @@ func (r *Room) run() {
 					r.Game.Players[r.Game.PlayerCounter].CallCheck = "check"
 				}
 				r.updateAllPlayers(r.Game.Players[r.Game.PlayerCounter], "enablePlayer")
+				r.Game.Players[r.Game.PlayerCounter].sendMinBet("minBet", r.Game.MaxBet)
 			}
 		}
 	}
