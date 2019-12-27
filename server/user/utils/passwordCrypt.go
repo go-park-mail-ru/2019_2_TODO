@@ -1,8 +1,8 @@
 package utils
 
 import (
-	"bytes"
 	"crypto/rand"
+	"encoding/base64"
 	"log"
 
 	"golang.org/x/crypto/argon2"
@@ -16,11 +16,16 @@ func HashPass(salt []byte, plainPassword string) []byte {
 
 // CheckPass - check equals of 2 hashes
 func CheckPass(passHash []byte, plainPassword string) bool {
-	log.Println("plainPassword hash:", plainPassword)
 	salt := passHash[0:8]
 	userPassHash := HashPass(salt, plainPassword)
-	log.Println("User hash:", userPassHash)
-	return bytes.Equal(userPassHash, passHash)
+	elem1 := base64.StdEncoding.EncodeToString(passHash)
+	elem2 := base64.StdEncoding.EncodeToString(userPassHash)
+	log.Println(elem1)
+	log.Println(elem2)
+	if elem1 == elem2 {
+		return true
+	}
+	return false
 }
 
 // ConvertPass - conver pass into argon2 hashed pass with random salt

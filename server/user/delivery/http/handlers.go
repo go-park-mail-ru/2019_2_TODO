@@ -108,7 +108,7 @@ func (h *Handlers) handleSignIn(ctx echo.Context) error {
 		return ctx.JSON(http.StatusUnauthorized, "No such user!")
 	}
 
-	passToCheck, err := base64.StdEncoding.DecodeString(authCredentials.Password)
+	passToCheck, err := base64.StdEncoding.DecodeString(userRecord.Password)
 	log.Println("-------------------------------------------------------------")
 	log.Println("My pass: ", authCredentials.Password)
 	log.Println("Pass from bd: ", userRecord.Password)
@@ -116,7 +116,7 @@ func (h *Handlers) handleSignIn(ctx echo.Context) error {
 	log.Println(err)
 	log.Println("-------------------------------------------------------------")
 
-	if !utils.CheckPass(passToCheck, userRecord.Password) {
+	if utils.CheckPass(passToCheck, authCredentials.Password) {
 		return ctx.JSON(http.StatusUnauthorized, "Incorrect password!")
 	}
 
