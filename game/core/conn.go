@@ -81,6 +81,9 @@ func (pc *playerConn) Command(command string) string {
 			pc.Player.Chips -= pc.Room.Game.MaxBet - pc.Player.Bet
 			pc.Player.Bet = pc.Room.Game.MaxBet
 		}
+		if pc.Room.Game.AllInCounter == (pc.Room.Game.ActivePlayers - 1) {
+			pc.Room.Game.AllInCounter++
+		}
 		command = "updatePlayerScore"
 	} else {
 		raiseCommand := strings.Split(command, " ")
@@ -96,6 +99,9 @@ func (pc *playerConn) Command(command string) string {
 	}
 	if pc.Player.Chips <= 0 {
 		pc.Player.AllIn = true
+		pc.Room.Game.AllInCounter++
+	}
+	if pc.Room.Game.AllInCounter == (pc.Room.Game.ActivePlayers - 1) {
 		pc.Room.Game.AllInCounter++
 	}
 	return command
