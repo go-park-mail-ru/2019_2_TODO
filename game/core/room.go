@@ -98,7 +98,7 @@ func (r *Room) run() {
 					goto EndFoldGame
 				}
 			SkipPlayer:
-				if r.Game.AllInCounter == r.Game.ActivePlayers {
+				if r.Game.AllInCounter >= r.Game.ActivePlayers {
 					for conn := range r.PlayerConns {
 						r.updateAllPlayers(conn, "showPlayerCards")
 					}
@@ -143,7 +143,7 @@ func (r *Room) run() {
 				}
 				if r.Game.Players[r.Game.PlayerCounter].Player.AllIn ||
 					r.Game.Players[r.Game.PlayerCounter].Player.Fold ||
-					(r.Game.AllInCounter == r.Game.ActivePlayers) {
+					(r.Game.AllInCounter >= r.Game.ActivePlayers) {
 					goto SkipPlayer
 				}
 				r.updateAllPlayers(r.Game.Players[r.Game.PlayerCounter], "enablePlayer")
